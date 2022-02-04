@@ -1,0 +1,1 @@
+Folder sa datotekama
