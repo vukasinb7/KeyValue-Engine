@@ -38,11 +38,14 @@ func NewHyperLogLog(p uint) HyperLogLog{
 }
 
 func (hll *HyperLogLog) Insert(byteArray []byte){
-	hll.hashFunction.Write(byteArray)
-	hash := hll.hashFunction.Sum32()
+	_, err := hll.hashFunction.Write(byteArray)
+	if err != nil{
+		panic(err)
+	}
+	hashVal := hll.hashFunction.Sum32()
 	hll.hashFunction.Reset()
-	trailingZeros := bits.TrailingZeros32(hash)
-	bucketIndex := (hash >> (32 - hll.p)) & ((1 << hll.p) - 1)
+	trailingZeros := bits.TrailingZeros32(hashVal)
+	bucketIndex := (hashVal >> (32 - hll.p)) & ((1 << hll.p) - 1)
 	hll.buckets[bucketIndex] = uint8(math.Max(float64(hll.buckets[bucketIndex]), float64(trailingZeros)))
 }
 
