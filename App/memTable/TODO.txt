@@ -1,6 +1,0 @@
-
-1. Dodati operaciju brisanja u skip-listu
-
-2. Napraviti strukturu memtable (obezbediti i serijalizaciju)
-
-3. Serijalizacije bloomfilter strukture (mozda)
