@@ -23,10 +23,21 @@ func (bf *BloomFilter) getIndex(byteArray []byte, hfunc hash.Hash32) uint{
 	return hashReduced
 }
 
-func createHashFunctions(k uint) []hash.Hash32 {
+func createHashFunctions(k uint) ([]hash.Hash32, []uint32) {
 	var h []hash.Hash32
+	var seeds []uint32
 	for i := uint(0); i < k; i++ {
-		h = append(h, murmur3.New32WithSeed(rand.Uint32()))
+		seed := rand.Uint32()
+		seeds = append(seeds, seed)
+		h = append(h, murmur3.New32WithSeed(seed))
+	}
+	return h, seeds
+}
+
+func hashFunctionsFromSeeds(seeds []uint32) ([]hash.Hash32) {
+	var h []hash.Hash32
+	for i := 0; i < len(seeds); i++{
+		h = append(h, murmur3.New32WithSeed(seeds[i]))
 	}
 	return h
 }
