@@ -54,6 +54,7 @@ func (skipList *SkipList) Insert(key string, value []byte) error{
 func (skipList *SkipList) Get(key string) ([]byte, error){
 	// Returns the value of the element with key
 	// Throws error if key is not found
+
 	currentNode := skipList.head
 	level := skipList.height
 	for ;level >= 0;{
