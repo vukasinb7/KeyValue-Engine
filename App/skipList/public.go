@@ -7,8 +7,11 @@ import (
 )
 
 func (skipList *SkipList) Insert(key string, value []byte) error{
-	// Insert key value pair into the SkipList
-	// Throws error if the key is duplicate
+	// ================
+	// Description:
+	// ================
+	// 		Inserts key value pair into the SkipList
+	// 		Throws error if the key is duplicate
 
 	path := make([]*skipListNode, 0, skipList.height)
 	currentNode := skipList.head
@@ -52,8 +55,11 @@ func (skipList *SkipList) Insert(key string, value []byte) error{
 }
 
 func (skipList *SkipList) Get(key string) ([]byte, error){
-	// Returns the value of the element with key
-	// Throws error if key is not found
+	// ================
+	// Description:
+	// ================
+	// 		Returns the value of the element with key
+	// 		Throws error if key is not found
 
 	currentNode := skipList.head
 	level := skipList.height
@@ -69,7 +75,41 @@ func (skipList *SkipList) Get(key string) ([]byte, error){
 			break
 		}
 	}
-	return []byte{}, errors.New("The key is not in the list")
+	return []byte{}, errors.New("the key is not in the list")
+}
+
+func (skipList *SkipList) Delete(key string) ([]byte, error){
+	// ================
+	// Description:
+	// ================
+	// 		Deletes the element with given key
+	// 		Returns the value of the element if it is found, else returns error
+
+	path := make([]*skipListNode, 0, skipList.height)
+	currentNode := skipList.head
+	level := skipList.height
+	var output []byte
+	for ;level >= 0;{
+		if currentNode.next[level] != nil && currentNode.next[level].key == key{
+			path = append(path, currentNode)
+			level--
+		} else if currentNode.next[level] == nil || (currentNode.next[level].key > key && level > 0) {
+			level--
+		} else if currentNode.next[level].key < key{
+			currentNode = currentNode.next[level]
+		} else{
+			return nil, errors.New("the key is not in the list")
+		}
+	}
+	output = path[0].next[len(path) - 1].value
+	for i := len(path) - 1; i >= 0; i--{
+		currentLevel := len(path) - i - 1
+		path[i].next[currentLevel] = path[i].next[currentLevel].next[currentLevel]
+	}
+	if skipList.head.next[skipList.height] == nil{
+		skipList.height--
+	}
+	return output, nil
 }
 
 func (skipList *SkipList) Size() int{
@@ -85,5 +125,40 @@ func (skipList *SkipList) MaxHeight() int{
 }
 
 func (skipList *SkipList) Print(){
-	fmt.Printf("SkipList {size: %d, height: %d, maxHeight: %d}",skipList.size, skipList.height, skipList.maxHeight)
+	fmt.Printf("SkipList {size: %d, height: %d, maxHeight: %d}\n",skipList.size, skipList.height, skipList.maxHeight)
+}
+
+func (skipList *SkipList) Next() (string, []byte, error){
+	// ================
+	// Description:
+	// ================
+	// 		Increments iterator
+	// 		Returns key and value of element iterator is pointing to
+	// 		If the iterator is at the end of data returns error
+	//		Use ResetIterator() to iterate through list again
+	//
+	// ================
+	// Example of use:
+	// ================
+	// 		key, val, err := skipList.Next()
+	// 		for ; err == nil; key, val, err = skipList.Next(){
+	//			fmt.Println("{",key,",",val,"}")
+	// 		}
+
+	nextIter := skipList.iterator.next[0]
+	if nextIter == nil{
+		return "", nil, errors.New("iterator is at the end of data")
+	}
+
+	skipList.iterator = nextIter
+	return skipList.iterator.key, skipList.iterator.value, nil
+}
+
+func (skipList *SkipList) ResetIterator(){
+	// ================
+	// Description:
+	// ================
+	// 		Returns iterator to a beginning of data
+
+	skipList.iterator = skipList.head
 }

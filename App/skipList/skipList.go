@@ -9,10 +9,11 @@ type skipListNode struct {
 }
 
 type SkipList struct {
-	head *skipListNode
-	size int
-	height int
-	maxHeight int
+	head 		*skipListNode	// pointer to a starting node
+	size 		int				// number of elements in list
+	height 		int				// index of the highest row
+	maxHeight 	int				// maximum number of rows
+	iterator	*skipListNode	//iterator
 }
 
 func NewSkipList(maxHeight int) SkipList {
@@ -28,6 +29,7 @@ func NewSkipList(maxHeight int) SkipList {
 		size:      0,
 		height:    0,
 		maxHeight: maxHeight,
+		iterator: head,
 	}
 	return skipList
 }
