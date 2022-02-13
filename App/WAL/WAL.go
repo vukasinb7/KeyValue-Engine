@@ -22,7 +22,7 @@ import (
    Value = Value data
    Timestamp = Timestamp of the operation in seconds
 */
-
+//TODO Potencijalna promena  current file iz *os.File u string imena fajla
 const (
 	CRC_SIZE       = 4
 	TIMESTAMP_SIZE = 16
@@ -41,7 +41,7 @@ func CRC32(data []byte) uint32 {
 }
 
 type Wal struct {
-	segmentSize     uint8
+	segmentSize     uint64
 	segmentIndex    uint8
 	currentFile     *os.File
 	parentDirectory string
@@ -49,7 +49,7 @@ type Wal struct {
 	//treba mmapa
 }
 
-func createWal(segmentSize uint8, parentDirectory string, lwm int32) Wal {
+func createWal(segmentSize uint64, parentDirectory string, lwm int32) Wal {
 	segments, err := ioutil.ReadDir(parentDirectory)
 	if err != nil {
 		log.Fatal(err)
@@ -128,7 +128,7 @@ func (wal *Wal) insertRecord(key string, value []byte, status bool) {
 		log.Fatal(err3)
 	}
 
-	if fileInfo.Size() > SEGMENT_SIZE {
+	if fileInfo.Size() > int64(wal.segmentSize) {
 		num := fmt.Sprintf("%04d", wal.segmentIndex+1)
 		name := "wal_" + num + ".log.bin"
 		file, err := os.Create(wal.parentDirectory + name)
@@ -169,10 +169,19 @@ func (wal *Wal) deleteOldSegments() {
 		}
 	}
 	wal.segmentIndex = uint8(len(segments))
+	num := fmt.Sprintf("%04d", len(segments))
+	name := "wal_" + num + ".log.bin"
+	f, err := os.OpenFile(wal.parentDirectory+name, os.O_RDWR, 065+1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	wal.currentFile = f
+
 }
 
 func main() {
-	wal := createWal(10, "Data/WAL/", 5)
+	wal := createWal(SEGMENT_SIZE, "Data/WAL/", 5)
 	wal.insertRecord("asdasd", []byte{1, 2, 3, 4, 5}, true)
 	wal.insertRecord("69420", []byte{4, 4, 4, 4, 4, 4}, true)
 
