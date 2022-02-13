@@ -43,7 +43,7 @@ func CRC32(data []byte) uint32 {
 type Wal struct {
 	segmentSize     uint64
 	segmentIndex    uint8
-	currentFile     *os.File
+	currentFile     string
 	parentDirectory string
 	lwm             int32 //broj segmenata koji ostavljamo
 	//treba mmapa
@@ -55,24 +55,25 @@ func createWal(segmentSize uint64, parentDirectory string, lwm int32) Wal {
 		log.Fatal(err)
 	}
 
-	var currentFile *os.File
+	var currentFile string
 	var segmentIndex uint8
 	if len(segments) == 0 {
 		file, err := os.Create(parentDirectory + "wal_0001.log.bin")
 		if err != nil {
 			log.Fatal(err)
 		}
-		currentFile = file
+		file.Close()
+		currentFile = file.Name()
 		segmentIndex = 1
 	} else {
 		file, err := os.OpenFile(parentDirectory+segments[len(segments)-1].Name(), os.O_RDWR, 065+1)
 		if err != nil {
 			log.Fatal(err)
 		}
-		currentFile = file
+		file.Close()
+		currentFile = file.Name()
 		segmentIndex = uint8(len(segments))
 	}
-	currentFile.Close()
 
 	createdWal := Wal{
 		segmentSize:     segmentSize,
@@ -109,7 +110,7 @@ func (wal *Wal) insertRecord(key string, value []byte, status bool) {
 		newRecord[CRC_SIZE+TIMESTAMP_SIZE+TOMBSTONE_SIZE+KEY_SIZE+VALUE_SIZE+len(key)+i] = value[i]
 	}
 
-	f, err := os.OpenFile(wal.currentFile.Name(), os.O_RDWR, 065+1)
+	f, err := os.OpenFile(wal.currentFile, os.O_RDWR, 065+1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -123,7 +124,7 @@ func (wal *Wal) insertRecord(key string, value []byte, status bool) {
 	if err2 != nil {
 		log.Fatal(err2)
 	}
-	fileInfo, err3 := os.Stat(wal.currentFile.Name())
+	fileInfo, err3 := os.Stat(wal.currentFile)
 	if err3 != nil {
 		log.Fatal(err3)
 	}
@@ -137,7 +138,7 @@ func (wal *Wal) insertRecord(key string, value []byte, status bool) {
 		}
 		file.Close()
 
-		wal.currentFile = file
+		wal.currentFile = file.Name()
 		wal.segmentIndex++
 	}
 }
@@ -176,7 +177,7 @@ func (wal *Wal) deleteOldSegments() {
 		log.Fatal(err)
 	}
 	defer f.Close()
-	wal.currentFile = f
+	wal.currentFile = f.Name()
 
 }
 
@@ -189,9 +190,10 @@ func main() {
 		wal.insertRecord("69420", []byte{4, 4, 4, 4, 4, 4}, true)
 	}
 	wal.deleteOldSegments()
-	for i := 0; i < 200; i++ {
+	for i := 0; i < 220; i++ {
 		wal.insertRecord("69420", []byte{4, 4, 4, 4, 4, 4}, true)
 	}
+
 }
 
 /*
