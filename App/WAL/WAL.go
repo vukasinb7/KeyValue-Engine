@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"fmt"
 	"hash/crc32"
 	"io/ioutil"
 	"log"
@@ -31,6 +32,8 @@ const (
 
 	TOMBSTONE_INSERT = 0
 	TOMBSTONE_DELETE = 1
+
+	SEGMENT_SIZE = 1 * 1024
 )
 
 func CRC32(data []byte) uint32 {
@@ -42,10 +45,11 @@ type Wal struct {
 	segmentIndex    uint8
 	currentFile     *os.File
 	parentDirectory string
-	//treba mapa
+	lwm             int32 //broj segmenata koji ostavljamo
+	//treba mmapa
 }
 
-func createWal(segmentSize uint8, parentDirectory string) Wal {
+func createWal(segmentSize uint8, parentDirectory string, lwm int32) Wal {
 	segments, err := ioutil.ReadDir(parentDirectory)
 	if err != nil {
 		log.Fatal(err)
@@ -61,25 +65,27 @@ func createWal(segmentSize uint8, parentDirectory string) Wal {
 		currentFile = file
 		segmentIndex = 1
 	} else {
-		file, err := os.Open(parentDirectory + segments[len(segments)-1].Name())
+		file, err := os.OpenFile(parentDirectory+segments[len(segments)-1].Name(), os.O_RDWR, 065+1)
 		if err != nil {
 			log.Fatal(err)
 		}
 		currentFile = file
 		segmentIndex = uint8(len(segments))
 	}
+	currentFile.Close()
 
 	createdWal := Wal{
 		segmentSize:     segmentSize,
 		segmentIndex:    segmentIndex,
 		currentFile:     currentFile,
 		parentDirectory: parentDirectory,
+		lwm:             lwm,
 	}
 
 	return createdWal
 }
 
-func (wal *Wal) insertRecord(key string, value []byte) {
+func (wal *Wal) insertRecord(key string, value []byte, status bool) {
 	recordSize := CRC_SIZE + TOMBSTONE_SIZE + TIMESTAMP_SIZE + KEY_SIZE + VALUE_SIZE + len(key) + len(value)
 	newRecord := make([]byte, recordSize, recordSize)
 
@@ -89,7 +95,11 @@ func (wal *Wal) insertRecord(key string, value []byte) {
 
 	binary.LittleEndian.PutUint32(newRecord[:], crc)
 	binary.LittleEndian.PutUint64(newRecord[CRC_SIZE:], uint64(timestamp))
-	newRecord[CRC_SIZE+TIMESTAMP_SIZE] = byte(TOMBSTONE_INSERT)
+	if status {
+		newRecord[CRC_SIZE+TIMESTAMP_SIZE] = byte(TOMBSTONE_INSERT)
+	} else {
+		newRecord[CRC_SIZE+TIMESTAMP_SIZE] = byte(TOMBSTONE_DELETE)
+	}
 	binary.LittleEndian.PutUint64(newRecord[CRC_SIZE+TIMESTAMP_SIZE+TOMBSTONE_SIZE:], uint64(len(key)))
 	binary.LittleEndian.PutUint64(newRecord[CRC_SIZE+TIMESTAMP_SIZE+TOMBSTONE_SIZE+KEY_SIZE:], uint64(len(value)))
 	for i := 0; i < len(key); i++ {
@@ -99,21 +109,83 @@ func (wal *Wal) insertRecord(key string, value []byte) {
 		newRecord[CRC_SIZE+TIMESTAMP_SIZE+TOMBSTONE_SIZE+KEY_SIZE+VALUE_SIZE+len(key)+i] = value[i]
 	}
 
-	f := wal.currentFile
-	_, err := f.Write(newRecord)
+	f, err := os.OpenFile(wal.currentFile.Name(), os.O_RDWR, 065+1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+	_, err1 := f.Seek(0, 2)
+	if err1 != nil {
+		log.Fatal(err1)
+	}
+
+	_, err2 := f.Write(newRecord)
+	if err2 != nil {
+		log.Fatal(err2)
+	}
+	fileInfo, err3 := os.Stat(wal.currentFile.Name())
+	if err3 != nil {
+		log.Fatal(err3)
+	}
+
+	if fileInfo.Size() > SEGMENT_SIZE {
+		num := fmt.Sprintf("%04d", wal.segmentIndex+1)
+		name := "wal_" + num + ".log.bin"
+		file, err := os.Create(wal.parentDirectory + name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		file.Close()
+
+		wal.currentFile = file
+		wal.segmentIndex++
+	}
+}
+
+func (wal *Wal) deleteOldSegments() {
+	segments, err := ioutil.ReadDir(wal.parentDirectory)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	for i := 0; i < len(segments)-int(wal.lwm); i++ {
+		err := os.Remove(wal.parentDirectory + segments[i].Name())
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	segments, err = ioutil.ReadDir(wal.parentDirectory)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for i := 0; i < len(segments); i++ {
+		num := fmt.Sprintf("%04d", i+1)
+		name := "wal_" + num + ".log.bin"
+		err2 := os.Rename(wal.parentDirectory+segments[i].Name(), wal.parentDirectory+name)
+		if err2 != nil {
+			log.Fatal(err2)
+		}
+	}
+	wal.segmentIndex = uint8(len(segments))
 }
 
 func main() {
-	wal := createWal(10, "Data/WAL/")
-	wal.insertRecord("asdasd", []byte{1, 2, 3, 4, 5})
+	wal := createWal(10, "Data/WAL/", 5)
+	wal.insertRecord("asdasd", []byte{1, 2, 3, 4, 5}, true)
+	wal.insertRecord("69420", []byte{4, 4, 4, 4, 4, 4}, true)
 
-	wal.insertRecord("69420", []byte{4, 4, 4, 4, 4, 4})
+	for i := 0; i < 200; i++ {
+		wal.insertRecord("69420", []byte{4, 4, 4, 4, 4, 4}, true)
+	}
+	wal.deleteOldSegments()
+	for i := 0; i < 200; i++ {
+		wal.insertRecord("69420", []byte{4, 4, 4, 4, 4, 4}, true)
+	}
 }
 
+/*
 type WalRecord struct {
 	crc       uint32
 	timestamp uint64
@@ -122,4 +194,4 @@ type WalRecord struct {
 	valueSize uint64
 	key       string
 	value     []byte
-}
+}*/
