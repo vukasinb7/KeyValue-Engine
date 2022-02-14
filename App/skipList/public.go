@@ -69,7 +69,7 @@ func (skipList *SkipList) Get(key string) ([]byte, error){
 			break
 		}
 	}
-	return []byte{}, errors.New("The key is not in the list")
+	return []byte{}, errors.New("the key is not in the list")
 }
 
 func (skipList *SkipList) Size() int{
