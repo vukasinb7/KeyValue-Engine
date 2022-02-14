@@ -1,4 +1,4 @@
-module bloomFilter
+module NASP/bloomFilter
 
 go 1.17
 

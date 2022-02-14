@@ -1,4 +1,4 @@
-module countMinSketch
+module NASP/countMinSketch
 
 go 1.17
 
