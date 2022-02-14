@@ -4,7 +4,10 @@ package skipList
 import (
 	"errors"
 	"fmt"
+	"pair"
 )
+
+
 
 func (skipList *SkipList) Insert(key string, value []byte) error{
 	// ================
@@ -126,6 +129,27 @@ func (skipList *SkipList) MaxHeight() int{
 
 func (skipList *SkipList) Print(){
 	fmt.Printf("SkipList {size: %d, height: %d, maxHeight: %d}\n",skipList.size, skipList.height, skipList.maxHeight)
+}
+
+func (skipList *SkipList) GetData() []pair.KVPair{
+	// ================
+	// Description:
+	// ================
+	// 		Returns list of key-value pairs
+
+	data := make([]pair.KVPair, 0, skipList.size)
+	skipList.ResetIterator()
+	var key string
+	var value []byte
+	var err error = nil
+	for ; err == nil; key, value, err = skipList.Next(){
+		data = append(data, pair.KVPair{
+			Key:   key,
+			Value: value,
+		})
+	}
+	return data
+
 }
 
 func (skipList *SkipList) Next() (string, []byte, error){
