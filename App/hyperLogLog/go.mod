@@ -1,4 +1,4 @@
-module hyperLogLog
+module NASP/hyperLogLog
 
 go 1.17
 
