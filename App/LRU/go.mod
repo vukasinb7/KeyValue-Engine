@@ -1,3 +1,3 @@
-module NASP/LRU
+module LRU
 
 go 1.17

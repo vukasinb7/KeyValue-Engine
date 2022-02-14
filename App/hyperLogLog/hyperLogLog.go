@@ -45,7 +45,7 @@ func (hll *HyperLogLog) Insert(byteArray []byte){
 	hashVal := hll.hashFunction.Sum32()
 	hll.hashFunction.Reset()
 	trailingZeros := bits.TrailingZeros32(hashVal)
-	bucketIndex := (hashVal >> (32 - hll.p)) & ((1 << hll.p) - 1)
+	bucketIndex := hashVal >> (32 - hll.p)
 	hll.buckets[bucketIndex] = uint8(math.Max(float64(hll.buckets[bucketIndex]), float64(trailingZeros)))
 }
 

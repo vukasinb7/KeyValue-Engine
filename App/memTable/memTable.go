@@ -22,3 +22,4 @@ func newMemTable(threshold, capacity uint32) MemTable{
 	}
 	return memTable
 }
+
