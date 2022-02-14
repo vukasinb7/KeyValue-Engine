@@ -1,0 +1,7 @@
+{
+  "MemTableThreshold": 1000,
+  "MemTableCapacity": 2000,
+  "WalSegmentSize": 500,
+  "WalDirectory": "Data/WAL/",
+  "LowWaterMark": 1
+}
