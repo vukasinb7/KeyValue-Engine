@@ -22,7 +22,8 @@ import (
    Value = Value data
    Timestamp = Timestamp of the operation in seconds
 */
-//TODO Potencijalna promena  current file iz *os.File u string imena fajla
+// TODO Potencijalna promena  current file iz *os.File u string imena fajla
+// TODO Koristiti mmap za pristup disku
 const (
 	CRC_SIZE       = 4
 	TIMESTAMP_SIZE = 16
@@ -41,11 +42,11 @@ func CRC32(data []byte) uint32 {
 }
 
 type Wal struct {
-	segmentSize     uint64
-	segmentIndex    uint8
-	currentFile     string
-	parentDirectory string
-	lwm             int32 //broj segmenata koji ostavljamo
+	segmentSize     uint64		// size of segment ib bytes
+	segmentIndex    uint8		// index of last segment
+	currentFile     string		// path of currently active segment
+	parentDirectory string		// path of directory where segments are located
+	lwm             int32 		// number of most recent segments that are not deleted
 	//treba mmapa
 }
 
