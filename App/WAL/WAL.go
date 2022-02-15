@@ -85,7 +85,7 @@ func CreateWal(segmentSize uint64, parentDirectory string, lwm uint32) Wal {
 	return createdWal
 }
 
-func (wal *Wal) pushRecord(kvPair pair.KVPair, status bool) {
+func (wal *Wal) PushRecord(kvPair pair.KVPair, status bool) error {
 	recordSize := CRC_SIZE + TOMBSTONE_SIZE + TIMESTAMP_SIZE + KEY_SIZE + VALUE_SIZE + len(kvPair.Key) + len(kvPair.Value)
 	newRecord := make([]byte, recordSize, recordSize)
 
@@ -116,37 +116,39 @@ func (wal *Wal) pushRecord(kvPair pair.KVPair, status bool) {
 	defer f.Close()*/
 	_, err1 := wal.currentFile.Seek(0, 2)
 	if err1 != nil {
-		log.Fatal(err1)
+		return err1
 	}
 
 	err2 := mmap.Append(wal.currentFile, newRecord)
 	if err2 != nil {
-		log.Fatal(err2)
+		return err2
 	}
 	fileInfo, err3 := os.Stat(wal.currentFile.Name())
 	if err3 != nil {
-		log.Fatal(err3)
+		return err3
 	}
 
 	if fileInfo.Size() > int64(wal.segmentSize) {
 		err4 := wal.currentFile.Close()
 		if err4 != nil {
-			log.Fatal(err3)
+			return err4
 		}
 		num := fmt.Sprintf("%04d", wal.segmentIndex+1)
 		name := "wal_" + num + ".log.bin"
 		file, err := os.Create(wal.parentDirectory + name)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		//file.Close()
 
 		wal.currentFile = file
 		wal.segmentIndex++
+
 	}
+	return nil
 }
 
-func (wal *Wal) deleteOldSegments() {
+func (wal *Wal) DeleteOldSegments() {
 	segments, err := ioutil.ReadDir(wal.parentDirectory)
 	if err != nil {
 		log.Fatal(err)

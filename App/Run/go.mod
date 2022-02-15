@@ -3,18 +3,25 @@ module run
 go 1.17
 
 replace (
-	pair => ../pair
 	configMng => ../configurationManager
+	lru => ../lru
 	memTable => ../memTable
-	wal => ../wal
 	mmap => ../mmap
+	pair => ../pair
 	skipList => ../skipList
+	wal => ../wal
 )
+
 require (
-	pair v1.0.0
 	configMng v1.0.0
 	memTable v1.0.0
 	wal v1.0.0
-	mmap v1.0.0
-	skipList v1.0.0
+)
+
+require (
+	github.com/edsrzf/mmap-go v1.0.0 // indirect
+	golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1 // indirect
+	mmap v1.0.0 // indirect
+	pair v1.0.0 // indirect
+	skipList v1.0.0 // indirect
 )

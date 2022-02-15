@@ -1,7 +1,9 @@
 {
-  "MemTableThreshold": 1000,
-  "MemTableCapacity": 2000,
-  "WalSegmentSize": 500,
+  "MemTableThreshold": 1000000,
+  "MemTableCapacity": 2000000,
+  "WalSegmentSize": 1024,
   "WalDirectory": "Data/WAL/",
-  "LowWaterMark": 1
+  "LowWaterMark": 1,
+  "DataFile": "Data/testData.txt",
+  "CacheCapacity":10
 }
