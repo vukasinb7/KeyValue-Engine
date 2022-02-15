@@ -1,4 +1,4 @@
-module example/mmap
+module mmap
 
 go 1.17
 

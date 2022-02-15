@@ -1,25 +1,23 @@
-package main
+package mmap
 
 import (
 	"errors"
-	"fmt"
 	"github.com/edsrzf/mmap-go"
-	"log"
 	"os"
 )
 
-func main() {
-	f, err := os.OpenFile("file", os.O_RDWR | os.O_CREATE, 0644)
+/*func main() {
+	f, err := os.OpenFile("file", os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
 
-	err = append(f, []byte("hello"))
+	err = Append(f, []byte("hello"))
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = append(f, []byte("hello"))
+	err = Append(f, []byte("hello"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,15 +32,17 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println(string(data))
-}
+}*/
 
-func append(file *os.File, data []byte) error {
+func Append(file *os.File, data []byte) error {
 	currentLen, err := fileLen(file)
 	if err != nil {
 		return err
 	}
 	err = file.Truncate(currentLen + int64(len(data)))
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	//mmapf, err := mmap.MapRegion(file, int(currentLen)+len(data), mmap.RDWR, 0, 0)
 	mmapf, err := mmap.Map(file, mmap.RDWR, 0)
 	if err != nil {
