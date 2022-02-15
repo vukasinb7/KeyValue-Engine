@@ -8,31 +8,31 @@ import (
 )
 
 type config struct {
-	MemTableThreshold 	uint32 `json:"MemTableThreshold"`
-	WalSegmentSize 		uint32 `json:"WalSegmentSize"`
-	WalDirectory 		string `json:"WalDirectory"`
-	LowWaterMark 		uint32 `json:"LowWaterMark"`
+	MemTableThreshold uint32 `json:"MemTableThreshold"`
+	WalSegmentSize    uint64 `json:"WalSegmentSize"`
+	WalDirectory      string `json:"WalDirectory"`
+	LowWaterMark      uint32 `json:"LowWaterMark"`
 }
 
-func (c *config) GetMemTableThreshold() uint32 {return c.MemTableThreshold }
-func (c *config) GetWalSegmentSize() uint32 {return c.WalSegmentSize }
-func (c *config) GetWalDirectory() string {return c.WalDirectory }
-func (c *config) GetLowWaterMark() uint32 {return c.LowWaterMark }
+func (c *config) GetMemTableThreshold() uint32 { return c.MemTableThreshold }
+func (c *config) GetWalSegmentSize() uint64    { return c.WalSegmentSize }
+func (c *config) GetWalDirectory() string      { return c.WalDirectory }
+func (c *config) GetLowWaterMark() uint32      { return c.LowWaterMark }
 
 var UserConfiguration config
 var DefaultConfiguration config
 
-func LoadUserConfiguration(filePath string){
+func LoadUserConfiguration(filePath string) {
 	parseJSON(filePath, &UserConfiguration)
 }
 
-func LoadDefaultConfiguration(filePath string){
+func LoadDefaultConfiguration(filePath string) {
 	parseJSON(filePath, &DefaultConfiguration)
 }
 
-func parseJSON(filePath string, destination *config){
+func parseJSON(filePath string, destination *config) {
 	jsonFile, err := os.Open(filePath)
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 	defer jsonFile.Close()

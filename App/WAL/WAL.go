@@ -1,4 +1,4 @@
-package main
+package wal
 
 import (
 	"encoding/binary"
@@ -35,8 +35,6 @@ const (
 
 	TOMBSTONE_INSERT = 0
 	TOMBSTONE_DELETE = 1
-
-	SEGMENT_SIZE = 1 * 1024
 )
 
 func CRC32(data []byte) uint32 {
@@ -45,21 +43,21 @@ func CRC32(data []byte) uint32 {
 
 type Wal struct {
 	segmentSize     uint64   // size of segment ib bytes
-	segmentIndex    uint8    // index of last segment
+	segmentIndex    uint32   // index of last segment
 	currentFile     *os.File // path of currently active segment
 	parentDirectory string   // path of directory where segments are located
-	lwm             int32    // number of most recent segments that are not deleted
+	lwm             uint32   // number of most recent segments that are not deleted
 
 }
 
-func createWal(segmentSize uint64, parentDirectory string, lwm int32) Wal {
+func CreateWal(segmentSize uint64, parentDirectory string, lwm uint32) Wal {
 	segments, err := ioutil.ReadDir(parentDirectory)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	var currentFile *os.File
-	var segmentIndex uint8
+	var segmentIndex uint32
 	if len(segments) == 0 {
 		file, err := os.Create(parentDirectory + "wal_0001.log.bin")
 		if err != nil {
@@ -73,7 +71,7 @@ func createWal(segmentSize uint64, parentDirectory string, lwm int32) Wal {
 			log.Fatal(err)
 		}
 		currentFile = file
-		segmentIndex = uint8(len(segments))
+		segmentIndex = uint32(len(segments))
 	}
 
 	createdWal := Wal{
@@ -178,7 +176,7 @@ func (wal *Wal) deleteOldSegments() {
 			log.Fatal(err2)
 		}
 	}
-	wal.segmentIndex = uint8(len(segments))
+	wal.segmentIndex = uint32(len(segments))
 	num := fmt.Sprintf("%04d", len(segments))
 	name := "wal_" + num + ".log.bin"
 	f, err := os.OpenFile(wal.parentDirectory+name, os.O_RDWR, 065+1)
@@ -187,21 +185,6 @@ func (wal *Wal) deleteOldSegments() {
 	}
 	//defer f.Close()
 	wal.currentFile = f
-
-}
-
-func main() {
-	wal := createWal(SEGMENT_SIZE, "Data/WAL/", 5)
-	wal.pushRecord(pair.KVPair{"asdasd", []byte{1, 2, 3, 4, 5}}, true)
-	wal.pushRecord(pair.KVPair{"69420", []byte{4, 4, 4, 4, 4, 4}}, true)
-
-	for i := 0; i < 200; i++ {
-		wal.pushRecord(pair.KVPair{"69420", []byte{4, 4, 4, 4, 4, 4}}, true)
-	}
-	wal.deleteOldSegments()
-	for i := 0; i < 220; i++ {
-		wal.pushRecord(pair.KVPair{"69420", []byte{4, 4, 4, 4, 4, 4}}, true)
-	}
 
 }
 
