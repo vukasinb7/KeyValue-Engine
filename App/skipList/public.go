@@ -1,4 +1,5 @@
 package skipList
+
 // Public methods for SkipList structure
 
 import (
@@ -7,57 +8,57 @@ import (
 	"pair"
 )
 
-
-
-func (skipList *SkipList) Insert(key string, value []byte) error{
+func (skipList *SkipList) Insert(kvPair pair.KVPair) bool {
 	// ================
 	// Description:
 	// ================
 	// 		Inserts key value pair into the SkipList
-	// 		Throws error if the key is duplicate
+	//		Returns status code: false for changing value for existing pair, true for inserting new pair
 
 	path := make([]*skipListNode, 0, skipList.height)
 	currentNode := skipList.head
 	level := skipList.height
-	for ;level >= 0;{
-		if currentNode.key == key{
-			return errors.New("duplicate key")
+	for level >= 0 {
+		if currentNode.key == kvPair.Key {
+			currentNode.value = kvPair.Value
+			return false
 		}
-		if currentNode.next[level] == nil || (currentNode.next[level].key > key && level > 0) {
+		if currentNode.next[level] == nil || (currentNode.next[level].key > kvPair.Key && level > 0) {
 			path = append(path, currentNode)
 			level--
-		} else if currentNode.next[level].key <= key{
+		} else if currentNode.next[level].key <= kvPair.Key {
 			currentNode = currentNode.next[level]
-		} else{
+		} else {
 			path = append(path, currentNode)
 			break
 		}
 	}
 	newNodeHeight := skipList.roll()
-	newNodeNext := make([]*skipListNode, newNodeHeight + 1, newNodeHeight + 1)
+	newNodeNext := make([]*skipListNode, newNodeHeight+1, newNodeHeight+1)
 	newNode := skipListNode{
-		key:   key,
-		value: value,
+		key:       kvPair.Key,
+		value:     kvPair.Value,
+		tombstone: 0,
 	}
-	for i := skipList.height; i >= 0; i--{
+	for i := skipList.height; i >= 0; i-- {
 		currentLevel := skipList.height - i
-		if currentLevel > newNodeHeight{
+		if currentLevel > newNodeHeight {
 			break
 		}
 		newNodeNext[currentLevel] = path[i].next[currentLevel]
 		path[i].next[currentLevel] = &newNode
 	}
-	if newNodeHeight > skipList.height{
+	if newNodeHeight > skipList.height {
 		newNodeNext[newNodeHeight] = nil
 		skipList.head.next[newNodeHeight] = &newNode
 		skipList.height++
 	}
 	newNode.next = newNodeNext
 	skipList.size++
-	return nil
+	return true
 }
 
-func (skipList *SkipList) Get(key string) ([]byte, error){
+func (skipList *SkipList) Get(key string) ([]byte, byte, error) {
 	// ================
 	// Description:
 	// ================
@@ -66,22 +67,73 @@ func (skipList *SkipList) Get(key string) ([]byte, error){
 
 	currentNode := skipList.head
 	level := skipList.height
-	for ;level >= 0;{
-		if currentNode.key == key{
-			return currentNode.value, nil
+	for level >= 0 {
+		if currentNode.key == key {
+			return currentNode.value, currentNode.tombstone, nil
 		}
 		if currentNode.next[level] == nil || (currentNode.next[level].key > key && level > 0) {
 			level--
-		} else if currentNode.next[level].key <= key{
+		} else if currentNode.next[level].key <= key {
 			currentNode = currentNode.next[level]
-		} else{
+		} else {
 			break
 		}
 	}
-	return []byte{}, errors.New("the key is not in the list")
+	return []byte{}, 0, errors.New("the key is not in the list")
 }
 
-func (skipList *SkipList) Delete(key string) ([]byte, error){
+func (skipList *SkipList) Delete(key string) bool {
+	// ================
+	// Description:
+	// ================
+	// 		Delete key value pair into the SkipList
+	//		Returns status code: false for changing tombstone value for existing pair, true for deleting new pair
+
+	path := make([]*skipListNode, 0, skipList.height)
+	currentNode := skipList.head
+	level := skipList.height
+	for level >= 0 {
+		if currentNode.key == key {
+			currentNode.tombstone = 1
+			return false
+		}
+		if currentNode.next[level] == nil || (currentNode.next[level].key > key && level > 0) {
+			path = append(path, currentNode)
+			level--
+		} else if currentNode.next[level].key <= key {
+			currentNode = currentNode.next[level]
+		} else {
+			path = append(path, currentNode)
+			break
+		}
+	}
+	newNodeHeight := skipList.roll()
+	newNodeNext := make([]*skipListNode, newNodeHeight+1, newNodeHeight+1)
+	newNode := skipListNode{
+		key:       key,
+		value:     nil,
+		tombstone: 1,
+	}
+	for i := skipList.height; i >= 0; i-- {
+		currentLevel := skipList.height - i
+		if currentLevel > newNodeHeight {
+			break
+		}
+		newNodeNext[currentLevel] = path[i].next[currentLevel]
+		path[i].next[currentLevel] = &newNode
+	}
+	if newNodeHeight > skipList.height {
+		newNodeNext[newNodeHeight] = nil
+		skipList.head.next[newNodeHeight] = &newNode
+		skipList.height++
+	}
+	newNode.next = newNodeNext
+	skipList.size++
+	return true
+}
+
+//DELETE
+/*func (skipList *SkipList) Delete(key string) ([]byte, error) {
 	// ================
 	// Description:
 	// ================
@@ -92,46 +144,46 @@ func (skipList *SkipList) Delete(key string) ([]byte, error){
 	currentNode := skipList.head
 	level := skipList.height
 	var output []byte
-	for ;level >= 0;{
-		if currentNode.next[level] != nil && currentNode.next[level].key == key{
+	for level >= 0 {
+		if currentNode.next[level] != nil && currentNode.next[level].key == key {
 			path = append(path, currentNode)
 			level--
 		} else if currentNode.next[level] == nil || (currentNode.next[level].key > key && level > 0) {
 			level--
-		} else if currentNode.next[level].key < key{
+		} else if currentNode.next[level].key < key {
 			currentNode = currentNode.next[level]
-		} else{
+		} else {
 			return nil, errors.New("the key is not in the list")
 		}
 	}
-	output = path[0].next[len(path) - 1].value
-	for i := len(path) - 1; i >= 0; i--{
+	output = path[0].next[len(path)-1].value
+	for i := len(path) - 1; i >= 0; i-- {
 		currentLevel := len(path) - i - 1
 		path[i].next[currentLevel] = path[i].next[currentLevel].next[currentLevel]
 	}
-	if skipList.head.next[skipList.height] == nil{
+	if skipList.head.next[skipList.height] == nil {
 		skipList.height--
 	}
 	return output, nil
-}
+}*/
 
-func (skipList *SkipList) Size() int{
+func (skipList *SkipList) Size() int {
 	return skipList.size
 }
 
-func (skipList *SkipList) Height() int{
+func (skipList *SkipList) Height() int {
 	return skipList.height
 }
 
-func (skipList *SkipList) MaxHeight() int{
+func (skipList *SkipList) MaxHeight() int {
 	return skipList.maxHeight
 }
 
-func (skipList *SkipList) Print(){
-	fmt.Printf("SkipList {size: %d, height: %d, maxHeight: %d}\n",skipList.size, skipList.height, skipList.maxHeight)
+func (skipList *SkipList) Print() {
+	fmt.Printf("SkipList {size: %d, height: %d, maxHeight: %d}\n", skipList.size, skipList.height, skipList.maxHeight)
 }
 
-func (skipList *SkipList) GetData() []pair.KVPair{
+func (skipList *SkipList) GetData() []pair.KVPair {
 	// ================
 	// Description:
 	// ================
@@ -139,10 +191,8 @@ func (skipList *SkipList) GetData() []pair.KVPair{
 
 	data := make([]pair.KVPair, 0, skipList.size)
 	skipList.ResetIterator()
-	var key string
-	var value []byte
-	var err error = nil
-	for ; err == nil; key, value, err = skipList.Next(){
+	key, value, err := skipList.Next()
+	for ; err == nil; key, value, err = skipList.Next() {
 		data = append(data, pair.KVPair{
 			Key:   key,
 			Value: value,
@@ -152,7 +202,7 @@ func (skipList *SkipList) GetData() []pair.KVPair{
 
 }
 
-func (skipList *SkipList) Next() (string, []byte, error){
+func (skipList *SkipList) Next() (string, []byte, error) {
 	// ================
 	// Description:
 	// ================
@@ -170,7 +220,7 @@ func (skipList *SkipList) Next() (string, []byte, error){
 	// 		}
 
 	nextIter := skipList.iterator.next[0]
-	if nextIter == nil{
+	if nextIter == nil {
 		return "", nil, errors.New("iterator is at the end of data")
 	}
 
@@ -178,7 +228,7 @@ func (skipList *SkipList) Next() (string, []byte, error){
 	return skipList.iterator.key, skipList.iterator.value, nil
 }
 
-func (skipList *SkipList) ResetIterator(){
+func (skipList *SkipList) ResetIterator() {
 	// ================
 	// Description:
 	// ================

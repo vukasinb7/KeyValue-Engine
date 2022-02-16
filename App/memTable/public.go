@@ -13,22 +13,20 @@ func (memTable *MemTable) Flush() []pair.KVPair {
 	return data
 }
 
-func (memTable *MemTable) Insert(pair pair.KVPair) error {
-	err := memTable.list.Insert(pair.Key, pair.Value)
-	if err != nil {
-		return err
+func (memTable *MemTable) Insert(pair pair.KVPair) {
+	isNew := memTable.list.Insert(pair)
+	if isNew {
+		memTable.size += pair.Size()
 	}
-	memTable.size += pair.Size()
-	return nil
 }
 
-func (memTable *MemTable) Delete(key string) ([]byte, error) {
-	value, err := memTable.list.Delete(key)
-	if err != nil {
-		return nil, err
+func (memTable *MemTable) Delete(key string) {
+	isNew := memTable.list.Delete(key)
+	if isNew {
+
+		memTable.size += uint32(len(key))
 	}
-	memTable.size -= uint32(len(key) + len(value))
-	return value, nil
+
 }
 
 func (memTable *MemTable) Size() uint32 {

@@ -17,7 +17,6 @@ func main() {
 	configurationManager.LoadDefaultConfiguration("Data/defaultConfiguration.json")
 	w := wal.CreateWal(configurationManager.DefaultConfiguration.WalSegmentSize, configurationManager.DefaultConfiguration.WalDirectory, configurationManager.DefaultConfiguration.LowWaterMark)
 	memtable := memTable.NewMemTable(configurationManager.DefaultConfiguration.MemTableThreshold, configurationManager.DefaultConfiguration.MemTableCapacity)
-
 	data := configurationManager.ParseData(configurationManager.DefaultConfiguration.DataFile)
 
 	for _, val := range data {
@@ -25,10 +24,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = memtable.Insert(val)
-		if err != nil {
-			return
-		}
+		memtable.Insert(val)
 		if memtable.Size() > memtable.Threshold() {
 			fmt.Println(memtable.Flush())
 			w.ResetWAL()
