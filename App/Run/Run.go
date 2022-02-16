@@ -10,7 +10,10 @@ import (
 )
 
 func main() {
-	os.Create("AA.txt")
+	_, errCreate := os.Create("AA.txt")
+	if errCreate != nil {
+		log.Fatal(errCreate)
+	}
 	configurationManager.LoadDefaultConfiguration("Data/defaultConfiguration.json")
 	w := wal.CreateWal(configurationManager.DefaultConfiguration.WalSegmentSize, configurationManager.DefaultConfiguration.WalDirectory, configurationManager.DefaultConfiguration.LowWaterMark)
 	memtable := memTable.NewMemTable(configurationManager.DefaultConfiguration.MemTableThreshold, configurationManager.DefaultConfiguration.MemTableCapacity)
@@ -22,10 +25,13 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		memtable.Insert(val)
+		err = memtable.Insert(val)
+		if err != nil {
+			return
+		}
 		if memtable.Size() > memtable.Threshold() {
 			fmt.Println(memtable.Flush())
-			w.DeleteOldSegments()
+			w.ResetWAL()
 		}
 
 	}

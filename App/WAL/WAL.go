@@ -160,34 +160,62 @@ func (wal *Wal) DeleteOldSegments() {
 			log.Fatal(err)
 		}
 	}
+	if wal.lwm == 0 {
+		wal.segmentIndex = 1
+		file, err := os.Create(wal.parentDirectory + "wal_0001.log.bin")
+		if err != nil {
+			log.Fatal(err)
+		}
+		wal.currentFile = file
+	} else {
 
-	segments, err = ioutil.ReadDir(wal.parentDirectory)
+		segments, err = ioutil.ReadDir(wal.parentDirectory)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for i := 0; i < len(segments); i++ {
+			num := fmt.Sprintf("%04d", i+1)
+			name := "wal_" + num + ".log.bin"
+			err3 := wal.currentFile.Close()
+			if err3 != nil {
+				log.Fatal(err3)
+			}
+			err2 := os.Rename(wal.parentDirectory+segments[i].Name(), wal.parentDirectory+name)
+			if err2 != nil {
+				log.Fatal(err2)
+			}
+		}
+		wal.segmentIndex = uint32(len(segments))
+		num := fmt.Sprintf("%04d", len(segments))
+		name := "wal_" + num + ".log.bin"
+		f, err := os.OpenFile(wal.parentDirectory+name, os.O_RDWR, 065+1)
+		if err != nil {
+			log.Fatal(err)
+		}
+		//defer f.Close()
+		wal.currentFile = f
+	}
+
+}
+func (wal *Wal) ResetWAL() {
+	err := wal.currentFile.Close()
+	if err != nil {
+		return
+	}
+	segments, err := ioutil.ReadDir(wal.parentDirectory)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for i := 0; i < len(segments); i++ {
-		num := fmt.Sprintf("%04d", i+1)
-		name := "wal_" + num + ".log.bin"
-		err3 := wal.currentFile.Close()
-		if err3 != nil {
-			log.Fatal(err3)
-		}
-		err2 := os.Rename(wal.parentDirectory+segments[i].Name(), wal.parentDirectory+name)
-		if err2 != nil {
-			log.Fatal(err2)
+		err := os.Remove(wal.parentDirectory + segments[i].Name())
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
-	wal.segmentIndex = uint32(len(segments))
-	num := fmt.Sprintf("%04d", len(segments))
-	name := "wal_" + num + ".log.bin"
-	f, err := os.OpenFile(wal.parentDirectory+name, os.O_RDWR, 065+1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//defer f.Close()
-	wal.currentFile = f
-
+	wal.segmentIndex = 1
+	file, err := os.Create(wal.parentDirectory + "wal_0001.log.bin")
+	wal.currentFile = file
 }
 
 /*
