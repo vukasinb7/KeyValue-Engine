@@ -1,13 +1,13 @@
 package skipList
 
+import "pair"
+
 // Header file for SkipList structure
 // Contains SkipList and skipListNode structures and constructor for SkipList
 
 type skipListNode struct {
-	key       string
-	value     []byte
-	tombstone byte
-	next      []*skipListNode
+	pair pair.KVPair
+	next []*skipListNode
 }
 
 type SkipList struct {
@@ -22,10 +22,8 @@ func NewSkipList(maxHeight int) SkipList {
 	next := make([]*skipListNode, maxHeight, maxHeight)
 	next[0] = nil
 	head := &skipListNode{
-		key:       "",
-		value:     nil,
-		tombstone: 0,
-		next:      next,
+		pair: pair.KVPair{"", nil, 0},
+		next: next,
 	}
 	skipList := SkipList{
 		head:      head,

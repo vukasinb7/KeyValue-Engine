@@ -19,14 +19,14 @@ func (skipList *SkipList) Insert(kvPair pair.KVPair) bool {
 	currentNode := skipList.head
 	level := skipList.height
 	for level >= 0 {
-		if currentNode.key == kvPair.Key {
-			currentNode.value = kvPair.Value
+		if currentNode.pair.Key == kvPair.Key {
+			currentNode.pair.Value = kvPair.Value
 			return false
 		}
-		if currentNode.next[level] == nil || (currentNode.next[level].key > kvPair.Key && level > 0) {
+		if currentNode.next[level] == nil || (currentNode.next[level].pair.Key > kvPair.Key && level > 0) {
 			path = append(path, currentNode)
 			level--
-		} else if currentNode.next[level].key <= kvPair.Key {
+		} else if currentNode.next[level].pair.Key <= kvPair.Key {
 			currentNode = currentNode.next[level]
 		} else {
 			path = append(path, currentNode)
@@ -36,9 +36,7 @@ func (skipList *SkipList) Insert(kvPair pair.KVPair) bool {
 	newNodeHeight := skipList.roll()
 	newNodeNext := make([]*skipListNode, newNodeHeight+1, newNodeHeight+1)
 	newNode := skipListNode{
-		key:       kvPair.Key,
-		value:     kvPair.Value,
-		tombstone: 0,
+		pair: pair.KVPair{kvPair.Key, kvPair.Value, 0},
 	}
 	for i := skipList.height; i >= 0; i-- {
 		currentLevel := skipList.height - i
@@ -68,12 +66,12 @@ func (skipList *SkipList) Get(key string) ([]byte, byte, error) {
 	currentNode := skipList.head
 	level := skipList.height
 	for level >= 0 {
-		if currentNode.key == key {
-			return currentNode.value, currentNode.tombstone, nil
+		if currentNode.pair.Key == key {
+			return currentNode.pair.Value, currentNode.pair.Tombstone, nil
 		}
-		if currentNode.next[level] == nil || (currentNode.next[level].key > key && level > 0) {
+		if currentNode.next[level] == nil || (currentNode.next[level].pair.Key > key && level > 0) {
 			level--
-		} else if currentNode.next[level].key <= key {
+		} else if currentNode.next[level].pair.Key <= key {
 			currentNode = currentNode.next[level]
 		} else {
 			break
@@ -93,14 +91,14 @@ func (skipList *SkipList) Delete(key string) bool {
 	currentNode := skipList.head
 	level := skipList.height
 	for level >= 0 {
-		if currentNode.key == key {
-			currentNode.tombstone = 1
+		if currentNode.pair.Key == key {
+			currentNode.pair.Tombstone = 1
 			return false
 		}
-		if currentNode.next[level] == nil || (currentNode.next[level].key > key && level > 0) {
+		if currentNode.next[level] == nil || (currentNode.next[level].pair.Key > key && level > 0) {
 			path = append(path, currentNode)
 			level--
-		} else if currentNode.next[level].key <= key {
+		} else if currentNode.next[level].pair.Key <= key {
 			currentNode = currentNode.next[level]
 		} else {
 			path = append(path, currentNode)
@@ -110,9 +108,7 @@ func (skipList *SkipList) Delete(key string) bool {
 	newNodeHeight := skipList.roll()
 	newNodeNext := make([]*skipListNode, newNodeHeight+1, newNodeHeight+1)
 	newNode := skipListNode{
-		key:       key,
-		value:     nil,
-		tombstone: 1,
+		pair: pair.KVPair{key, nil, 1},
 	}
 	for i := skipList.height; i >= 0; i-- {
 		currentLevel := skipList.height - i
@@ -191,18 +187,15 @@ func (skipList *SkipList) GetData() []pair.KVPair {
 
 	data := make([]pair.KVPair, 0, skipList.size)
 	skipList.ResetIterator()
-	key, value, err := skipList.Next()
-	for ; err == nil; key, value, err = skipList.Next() {
-		data = append(data, pair.KVPair{
-			Key:   key,
-			Value: value,
-		})
+	pairX, err := skipList.Next()
+	for ; err == nil; pairX, err = skipList.Next() {
+		data = append(data, pairX)
 	}
 	return data
 
 }
 
-func (skipList *SkipList) Next() (string, []byte, error) {
+func (skipList *SkipList) Next() (pair.KVPair, error) {
 	// ================
 	// Description:
 	// ================
@@ -221,11 +214,11 @@ func (skipList *SkipList) Next() (string, []byte, error) {
 
 	nextIter := skipList.iterator.next[0]
 	if nextIter == nil {
-		return "", nil, errors.New("iterator is at the end of data")
+		return pair.KVPair{}, errors.New("iterator is at the end of data")
 	}
 
 	skipList.iterator = nextIter
-	return skipList.iterator.key, skipList.iterator.value, nil
+	return skipList.iterator.pair, nil
 }
 
 func (skipList *SkipList) ResetIterator() {

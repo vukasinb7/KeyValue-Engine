@@ -68,7 +68,7 @@ func ParseData(dataFilePath string) []pair.KVPair {
 				key = string(temp)
 
 			} else {
-				result = append(result, pair.KVPair{key, temp})
+				result = append(result, pair.KVPair{key, temp, 0})
 			}
 			temp = nil
 			brojac++
