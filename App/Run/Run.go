@@ -1,7 +1,8 @@
 package main
 
 import (
-	"configMng"
+	"SSTable"
+	"configurationManager"
 	"fmt"
 	"log"
 	"memTable"
@@ -10,7 +11,7 @@ import (
 )
 
 func main() {
-	_, errCreate := os.Create("AA.txt")
+	_, errCreate := os.Create("AAA.txt")
 	if errCreate != nil {
 		log.Fatal(errCreate)
 	}
@@ -18,18 +19,27 @@ func main() {
 	w := wal.CreateWal(configurationManager.DefaultConfiguration.WalSegmentSize, configurationManager.DefaultConfiguration.WalDirectory, configurationManager.DefaultConfiguration.LowWaterMark)
 	memtable := memTable.NewMemTable(configurationManager.DefaultConfiguration.MemTableThreshold, configurationManager.DefaultConfiguration.MemTableCapacity)
 	data := configurationManager.ParseData(configurationManager.DefaultConfiguration.DataFile)
-
+	ss := SSTable.CreateSSTableMng(configurationManager.DefaultConfiguration.GetSSTableDirectory())
 	for _, val := range data {
 		err := w.PushRecord(val, true)
 		if err != nil {
 			log.Fatal(err)
 		}
 		memtable.Insert(val)
+		fmt.Println(memtable.Size())
 		if memtable.Size() > memtable.Threshold() {
-			fmt.Println(memtable.Flush())
+			err := ss.CreateSSTable(memtable.Flush())
+			if err != nil {
+				return
+			}
 			w.ResetWAL()
 		}
 
 	}
+	err := ss.CreateSSTable(memtable.Flush())
+	if err != nil {
+		return
+	}
+	w.ResetWAL()
 
 }

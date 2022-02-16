@@ -5,5 +5,6 @@
   "WalDirectory": "Data/WAL/",
   "LowWaterMark": 1,
   "DataFile": "Data/testData.txt",
-  "CacheCapacity":10
+  "CacheCapacity":10,
+  "SSTableDirectory":"Data/SSTables/"
 }

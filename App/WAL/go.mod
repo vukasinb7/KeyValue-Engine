@@ -5,11 +5,14 @@ go 1.17
 replace (
 	mmap => ../mmap
 	pair => ../pair
+	recordUtil => ../recordUtil
 )
 
 require (
 	mmap v1.0.0
 	pair v1.0.0
+	recordUtil v1.0.0
+
 )
 
 require (

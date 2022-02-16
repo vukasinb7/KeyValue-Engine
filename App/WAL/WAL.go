@@ -3,12 +3,12 @@ package wal
 import (
 	"encoding/binary"
 	"fmt"
-	"hash/crc32"
 	"io/ioutil"
 	"log"
 	"mmap"
 	"os"
 	"pair"
+	"recordUtil"
 	"time"
 )
 
@@ -26,20 +26,6 @@ import (
 */
 // TODO Potencijalna promena  current file iz *os.File u string imena fajla
 // TODO Koristiti mmap za pristup disku
-const (
-	CRC_SIZE       = 4
-	TIMESTAMP_SIZE = 16
-	TOMBSTONE_SIZE = 1
-	KEY_SIZE       = 8
-	VALUE_SIZE     = 8
-
-	TOMBSTONE_INSERT = 0
-	TOMBSTONE_DELETE = 1
-)
-
-func CRC32(data []byte) uint32 {
-	return crc32.ChecksumIEEE(data)
-}
 
 type Wal struct {
 	segmentSize     uint64   // size of segment ib bytes
@@ -86,27 +72,27 @@ func CreateWal(segmentSize uint64, parentDirectory string, lwm uint32) Wal {
 }
 
 func (wal *Wal) PushRecord(kvPair pair.KVPair, status bool) error {
-	recordSize := CRC_SIZE + TOMBSTONE_SIZE + TIMESTAMP_SIZE + KEY_SIZE + VALUE_SIZE + len(kvPair.Key) + len(kvPair.Value)
+	recordSize := recordUtil.CRC_SIZE + recordUtil.TOMBSTONE_SIZE + recordUtil.TIMESTAMP_SIZE + recordUtil.KEY_SIZE + recordUtil.VALUE_SIZE + len(kvPair.Key) + len(kvPair.Value)
 	newRecord := make([]byte, recordSize, recordSize)
 
-	crc := CRC32(kvPair.Value)
+	crc := recordUtil.CRC32(kvPair.Value)
 	currentTime := time.Now()
 	timestamp := currentTime.Unix()
 
 	binary.LittleEndian.PutUint32(newRecord[:], crc)
-	binary.LittleEndian.PutUint64(newRecord[CRC_SIZE:], uint64(timestamp))
+	binary.LittleEndian.PutUint64(newRecord[recordUtil.CRC_SIZE:], uint64(timestamp))
 	if status {
-		newRecord[CRC_SIZE+TIMESTAMP_SIZE] = byte(TOMBSTONE_INSERT)
+		newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE] = byte(recordUtil.TOMBSTONE_INSERT)
 	} else {
-		newRecord[CRC_SIZE+TIMESTAMP_SIZE] = byte(TOMBSTONE_DELETE)
+		newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE] = byte(recordUtil.TOMBSTONE_DELETE)
 	}
-	binary.LittleEndian.PutUint64(newRecord[CRC_SIZE+TIMESTAMP_SIZE+TOMBSTONE_SIZE:], uint64(len(kvPair.Key)))
-	binary.LittleEndian.PutUint64(newRecord[CRC_SIZE+TIMESTAMP_SIZE+TOMBSTONE_SIZE+KEY_SIZE:], uint64(len(kvPair.Value)))
+	binary.LittleEndian.PutUint64(newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE+recordUtil.TOMBSTONE_SIZE:], uint64(len(kvPair.Key)))
+	binary.LittleEndian.PutUint64(newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE+recordUtil.TOMBSTONE_SIZE+recordUtil.KEY_SIZE:], uint64(len(kvPair.Value)))
 	for i := 0; i < len(kvPair.Key); i++ {
-		newRecord[CRC_SIZE+TIMESTAMP_SIZE+TOMBSTONE_SIZE+KEY_SIZE+VALUE_SIZE+i] = kvPair.Key[i]
+		newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE+recordUtil.TOMBSTONE_SIZE+recordUtil.KEY_SIZE+recordUtil.VALUE_SIZE+i] = kvPair.Key[i]
 	}
 	for i := 0; i < len(kvPair.Value); i++ {
-		newRecord[CRC_SIZE+TIMESTAMP_SIZE+TOMBSTONE_SIZE+KEY_SIZE+VALUE_SIZE+len(kvPair.Key)+i] = kvPair.Value[i]
+		newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE+recordUtil.TOMBSTONE_SIZE+recordUtil.KEY_SIZE+recordUtil.VALUE_SIZE+len(kvPair.Key)+i] = kvPair.Value[i]
 	}
 
 	/*f, err := os.OpenFile(wal.currentFile.Name(), os.O_RDWR, 065+1)

@@ -1,6 +1,10 @@
 package memTable
 
-import "pair"
+import (
+	"math"
+	"pair"
+	"skipList"
+)
 
 func (memTable *MemTable) Flush() []pair.KVPair {
 	// ================
@@ -10,6 +14,9 @@ func (memTable *MemTable) Flush() []pair.KVPair {
 
 	data := memTable.list.GetData()
 	pair.SortByKey(data)
+	skipListHeight := int(math.Log2(float64(memTable.capacity)))
+	memTable.list = skipList.NewSkipList(skipListHeight)
+	memTable.size = 0
 	return data
 }
 
