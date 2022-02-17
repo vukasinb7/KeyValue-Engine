@@ -13,6 +13,7 @@ replace (
 	recordUtil => ../recordUtil
 	skipList => ../skipList
 	wal => ../wal
+	merkleTree => ../merkleTree
 )
 
 require (
@@ -31,4 +32,6 @@ require (
 	pair v1.0.0 // indirect
 	recordUtil v1.0.0 // indirect
 	skipList v1.0.0 // indirect
+	merkleTree v1.0.0
+
 )

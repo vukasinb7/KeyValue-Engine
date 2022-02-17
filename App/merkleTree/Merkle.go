@@ -4,7 +4,6 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -70,12 +69,9 @@ func NewMerkleTree(data [][]byte) *MerkleRoot {
 	tree := MerkleRoot{&nodes[0]}
 	return &tree
 }
-func (mr *MerkleRoot) SerializeMerkleTree() {
-	f, err := os.Create("metadata.txt")
+func (mr *MerkleRoot) SerializeMerkleTree(file *os.File) {
+	f := file
 
-	if err != nil {
-		log.Fatal(err)
-	}
 	defer f.Close()
 	var nodes []Node
 	nodes = append(nodes, *mr.root)
@@ -106,6 +102,6 @@ func main() {
 	list = append(list, []byte("sule1"))
 	mr := NewMerkleTree(list)
 	fmt.Println(mr.root)
-	mr.SerializeMerkleTree()
+	//mr.SerializeMerkleTree()
 
 }

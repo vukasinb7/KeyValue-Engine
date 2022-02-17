@@ -6,6 +6,7 @@ import (
 	"hash/crc32"
 	"io/ioutil"
 	"log"
+	"merkleTree"
 	"os"
 	"pair"
 	"recordUtil"
@@ -46,7 +47,10 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 	if err != nil {
 		return err
 	}
-
+	metadataFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Metadata.txt")
+	if err != nil {
+		return err
+	}
 	summaryFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Summary.bin")
 	if err != nil {
 		return err
@@ -81,7 +85,7 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 	if err != nil {
 		return err
 	}
-
+	var merkleTreeData [][]byte
 	for _, record := range pairs {
 		recordSize := recordUtil.CRC_SIZE + recordUtil.TOMBSTONE_SIZE + recordUtil.TIMESTAMP_SIZE + recordUtil.KEY_SIZE + recordUtil.VALUE_SIZE + len(record.Key) + len(record.Value)
 		newRecord := make([]byte, recordSize, recordSize)
@@ -110,9 +114,11 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 		}
 
 		_, err = dataFile.Write(newRecord)
+		merkleTreeData = append(merkleTreeData, newRecord)
 		if err != nil {
 			return err
 		}
+
 		indexSize := recordUtil.KEY_SIZE + len(record.Key) + 8
 		indexRecord := make([]byte, indexSize, indexSize)
 		binary.LittleEndian.PutUint64(indexRecord[:], uint64(len(record.Key)))
@@ -148,11 +154,19 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 		}
 
 	}
+	mr := merkleTree.NewMerkleTree(merkleTreeData)
+	mr.SerializeMerkleTree(metadataFile)
+	tocFile.Write([]byte(dataFile.Name()))
+	tocFile.Write([]byte(indexFile.Name()))
+	tocFile.Write([]byte(summaryFile.Name()))
+	tocFile.Write([]byte(filterFile.Name()))
+	tocFile.Write([]byte(metadataFile.Name()))
 	indexFile.Close()
 	dataFile.Close()
 	filterFile.Close()
 	tocFile.Close()
 	summaryFile.Close()
+	metadataFile.Close()
 	ss.currentIndex++
 	return nil
 
