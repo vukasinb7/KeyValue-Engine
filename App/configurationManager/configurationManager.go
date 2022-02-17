@@ -17,7 +17,7 @@ type config struct {
 	LowWaterMark      uint32 `json:"LowWaterMark"`
 	DataFile          string `json:"DataFile"`
 	CacheCapacity     uint32 `json:"CacheCapacity"`
-	SSTableDirectory  string `json:"SSTableDirectory"`
+	LSMDirectory      string `json:"LSMDirectory"`
 }
 
 func (c *config) GetMemTableThreshold() uint32 { return c.MemTableThreshold }
@@ -26,7 +26,7 @@ func (c *config) GetWalSegmentSize() uint64    { return c.WalSegmentSize }
 func (c *config) GetWalDirectory() string      { return c.WalDirectory }
 func (c *config) GetLowWaterMark() uint32      { return c.LowWaterMark }
 func (c *config) GetDataFile() string          { return c.DataFile }
-func (c *config) GetSSTableDirectory() string  { return c.SSTableDirectory }
+func (c *config) GetLSMDirectory() string      { return c.LSMDirectory }
 
 var UserConfiguration config
 var DefaultConfiguration config

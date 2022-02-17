@@ -18,7 +18,7 @@ func main() {
 	w := wal.CreateWal(configurationManager.DefaultConfiguration.WalSegmentSize, configurationManager.DefaultConfiguration.WalDirectory, configurationManager.DefaultConfiguration.LowWaterMark)
 	memtable := memTable.NewMemTable(configurationManager.DefaultConfiguration.MemTableThreshold, configurationManager.DefaultConfiguration.MemTableCapacity)
 	data := configurationManager.ParseData(configurationManager.DefaultConfiguration.DataFile)
-	ss := SSTable.CreateSSTableMng(configurationManager.DefaultConfiguration.GetSSTableDirectory())
+	ss := SSTable.CreateSSTableMng(configurationManager.DefaultConfiguration.GetLSMDirectory())
 	for _, val := range data {
 		err := w.PushRecord(val, true)
 		if err != nil {

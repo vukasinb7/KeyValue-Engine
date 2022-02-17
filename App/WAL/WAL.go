@@ -24,8 +24,6 @@ import (
    Value = Value data
    Timestamp = Timestamp of the operation in seconds
 */
-// TODO Potencijalna promena  current file iz *os.File u string imena fajla
-// TODO Koristiti mmap za pristup disku
 
 type Wal struct {
 	segmentSize     uint64   // size of segment ib bytes

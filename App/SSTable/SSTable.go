@@ -36,36 +36,36 @@ func CreateSSTableMng(DirPath string) *SSTableManager {
 
 	return &ss
 }
-func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
+func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint32, error) {
 	N := 10
 	folderName := ss.dirPath + "/SSTable_" + strconv.Itoa(int(ss.currentIndex))
 	err := os.Mkdir(folderName, 0664+2)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	indexFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Index.bin")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	metadataFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Metadata.txt")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	summaryFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Summary.bin")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	filterFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Filter.bin")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	dataFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Data.bin")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	tocFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-TOC.txt")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	it := 0
 
@@ -83,9 +83,11 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 	}
 	_, err = summaryFile.Write(headerRecord)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	var merkleTreeData [][]byte
+
+	dataLength := 0
 	for _, record := range pairs {
 		recordSize := recordUtil.CRC_SIZE + recordUtil.TOMBSTONE_SIZE + recordUtil.TIMESTAMP_SIZE + recordUtil.KEY_SIZE + recordUtil.VALUE_SIZE + len(record.Key) + len(record.Value)
 		newRecord := make([]byte, recordSize, recordSize)
@@ -110,14 +112,15 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 
 		address, err := dataFile.Seek(0, 1)
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		_, err = dataFile.Write(newRecord)
 		merkleTreeData = append(merkleTreeData, newRecord)
 		if err != nil {
-			return err
+			return 0, err
 		}
+		dataLength = len(newRecord)
 
 		indexSize := recordUtil.KEY_SIZE + len(record.Key) + 8
 		indexRecord := make([]byte, indexSize, indexSize)
@@ -129,7 +132,7 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 		indexAddress, err := indexFile.Seek(0, 1)
 		_, err = indexFile.Write(indexRecord)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		if it%N == 0 {
 			summarySize := recordUtil.KEY_SIZE + len(record.Key) + 8
@@ -141,7 +144,7 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 			binary.LittleEndian.PutUint64(summaryRecord[recordUtil.KEY_SIZE+len(record.Key):], uint64(indexAddress))
 			_, err = summaryFile.Write(summaryRecord)
 			if err != nil {
-				return err
+				return 0, err
 			}
 		}
 		it++
@@ -150,7 +153,7 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 		bloomBytes := bloom.Encode()
 		_, err = filterFile.Write(bloomBytes)
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 	}
@@ -168,6 +171,6 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 	summaryFile.Close()
 	metadataFile.Close()
 	ss.currentIndex++
-	return nil
+	return uint32(dataLength), nil
 
 }
