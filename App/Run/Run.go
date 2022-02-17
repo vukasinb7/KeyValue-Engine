@@ -3,7 +3,6 @@ package main
 import (
 	"SSTable"
 	"configurationManager"
-	"fmt"
 	"log"
 	"memTable"
 	"os"
@@ -26,7 +25,6 @@ func main() {
 			log.Fatal(err)
 		}
 		memtable.Insert(val)
-		fmt.Println(memtable.Size())
 		if memtable.Size() > memtable.Threshold() {
 			err := ss.CreateSSTable(memtable.Flush())
 			if err != nil {

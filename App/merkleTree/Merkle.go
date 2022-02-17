@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
-	"math"
 	"os"
 )
 
@@ -46,31 +45,21 @@ func NewMerkleNode(left, right *Node, data []byte) *Node {
 }
 func NewMerkleTree(data [][]byte) *MerkleRoot {
 	var nodes []Node
-	// ukoliko je potrebno dotati jos jedan podataka da bude paran broj
-	/*if len(data)%2 != 0 {
-		data = append(data, data[len(data)-1])
-	}*/
-	x := len(data)
-
-	for {
-
-		if (x != 0) && ((x & (x - 1)) == 0) {
-			break
-		} else {
-
-			data = append(data, []byte(""))
-			x++
-		}
-	}
 
 	// kreiranje listova
 	for _, dat := range data {
 		newNode := NewMerkleNode(nil, nil, dat)
 		nodes = append(nodes, *newNode)
 	}
-	height := int(math.Log2(float64(len(data))))
-	for i := 0; i < height; i++ {
+
+	for len(nodes) > 1 {
 		var treeLevel []Node
+
+		// ukoliko je potrebno dotati jos jedan podataka da bude paran broj
+		if len(nodes)%2 != 0 {
+			newNode := NewMerkleNode(nil, nil, []byte(""))
+			nodes = append(nodes, *newNode)
+		}
 
 		for j := 0; j < len(nodes); j += 2 {
 			node := NewMerkleNode(&nodes[j], &nodes[j+1], nil)
@@ -105,27 +94,16 @@ func (mr *MerkleRoot) SerializeMerkleTree() {
 		f.Write([]byte("\n"))
 		nodes = newNodes
 	}
-
-	fmt.Println("done")
 }
 
-/*func DeserializeMerkleTree() *MerkleRoot {
-	file, err := os.Open("metadata.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	b, err := ioutil.ReadAll(file)
-	fmt.Print(b)
-	return &MerkleRoot{}
-}*/
 func main() {
 	var list [][]byte
 	list = append(list, []byte("vule"))
 	list = append(list, []byte("jole"))
 	list = append(list, []byte("dule"))
 	list = append(list, []byte("sule"))
-	list = append(list, []byte("yule"))
-	list = append(list, []byte("6ule"))
+	list = append(list, []byte("dule1"))
+	list = append(list, []byte("sule1"))
 	mr := NewMerkleTree(list)
 	fmt.Println(mr.root)
 	mr.SerializeMerkleTree()

@@ -13,13 +13,6 @@ import (
 	"time"
 )
 
-/*type SSTable struct {
-	IndexPath   string
-	SummaryPath string
-	FilterPath  string
-	DataPath    string
-	TOCPath     string
-}*/
 type SSTableManager struct {
 	currentIndex uint32
 	dirPath      string
@@ -71,6 +64,24 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 		return err
 	}
 	it := 0
+
+	firstKeySize := len(pairs[0].Key)
+	lastKeySize := len(pairs[len(pairs)-1].Key)
+	headerSize := 2*recordUtil.KEY_SIZE + firstKeySize + lastKeySize
+	headerRecord := make([]byte, headerSize, headerSize)
+	binary.LittleEndian.PutUint64(headerRecord[:], uint64(firstKeySize))
+	for i := 0; i < firstKeySize; i++ {
+		headerRecord[recordUtil.KEY_SIZE+i] = pairs[0].Key[i]
+	}
+	binary.LittleEndian.PutUint64(headerRecord[recordUtil.KEY_SIZE+firstKeySize:], uint64(lastKeySize))
+	for i := 0; i < lastKeySize; i++ {
+		headerRecord[recordUtil.KEY_SIZE*2+firstKeySize+i] = pairs[len(pairs)-1].Key[i]
+	}
+	_, err = summaryFile.Write(headerRecord)
+	if err != nil {
+		return err
+	}
+
 	for _, record := range pairs {
 		recordSize := recordUtil.CRC_SIZE + recordUtil.TOMBSTONE_SIZE + recordUtil.TIMESTAMP_SIZE + recordUtil.KEY_SIZE + recordUtil.VALUE_SIZE + len(record.Key) + len(record.Value)
 		newRecord := make([]byte, recordSize, recordSize)
@@ -93,10 +104,6 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 			newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE+recordUtil.TOMBSTONE_SIZE+recordUtil.KEY_SIZE+recordUtil.VALUE_SIZE+len(record.Key)+i] = record.Value[i]
 		}
 
-		/*_, err := dataFile.Seek(0, 2)
-		if err != nil {
-			return err
-		}*/
 		address, err := dataFile.Seek(0, 1)
 		if err != nil {
 			return err
@@ -119,7 +126,6 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) error {
 			return err
 		}
 		if it%N == 0 {
-
 			summarySize := recordUtil.KEY_SIZE + len(record.Key) + 8
 			summaryRecord := make([]byte, summarySize, summarySize)
 			binary.LittleEndian.PutUint64(summaryRecord[:], uint64(len(record.Key)))
