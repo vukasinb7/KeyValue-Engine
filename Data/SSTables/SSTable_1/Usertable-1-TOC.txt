@@ -1,0 +1,5 @@
+Data/SSTables//SSTable_1/Usertable-1-Data.bin
+Data/SSTables//SSTable_1/Usertable-1-Index.bin
+Data/SSTables//SSTable_1/Usertable-1-Summary.bin
+Data/SSTables//SSTable_1/Usertable-1-Filter.bin
+Data/SSTables//SSTable_1/Usertable-1-Metadata.txt
