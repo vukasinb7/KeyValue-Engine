@@ -15,6 +15,7 @@ replace (
 	wal => ../wal
 	merkleTree => ../merkleTree
 	LSMTree => ../LSMTree
+	tockenBucket => ../tokenBucket
 )
 
 require (
@@ -23,6 +24,7 @@ require (
 	memTable v1.0.0
 	wal v1.0.0
 	LSMTree v1.0.0
+	tockenBucket v1.0.0
 )
 
 require (
