@@ -5,15 +5,10 @@ import (
 	"configurationManager"
 	"log"
 	"memTable"
-	"os"
 	"wal"
 )
 
 func main() {
-	_, errCreate := os.Create("AAA.txt")
-	if errCreate != nil {
-		log.Fatal(errCreate)
-	}
 	configurationManager.LoadDefaultConfiguration("Data/defaultConfiguration.json")
 	w := wal.CreateWal(configurationManager.DefaultConfiguration.WalSegmentSize, configurationManager.DefaultConfiguration.WalDirectory, configurationManager.DefaultConfiguration.LowWaterMark)
 	memtable := memTable.NewMemTable(configurationManager.DefaultConfiguration.MemTableThreshold, configurationManager.DefaultConfiguration.MemTableCapacity)

@@ -15,17 +15,20 @@ func calculateK(delta float64) uint {
 	return uint(math.Ceil(math.Log(math.E / delta)))
 }
 
-func createHashFunctions(k uint) []hash.Hash32 {
+func createHashFunctions(k uint) ([]hash.Hash32, []uint32) {
 	var h []hash.Hash32
+	var seeds []uint32
 	for i := uint(0); i < k; i++ {
-		h = append(h, murmur3.New32WithSeed(rand.Uint32()))
+		seed := rand.Uint32()
+		seeds = append(seeds, seed)
+		h = append(h, murmur3.New32WithSeed(seed))
 	}
-	return h
+	return h, seeds
 }
 
-func (cms *CountMinSketch) getIndex(byteArray []byte, hfunc hash.Hash32) uint{
+func (cms *CountMinSketch) getIndex(byteArray []byte, hfunc hash.Hash32) uint {
 	_, err := hfunc.Write(byteArray)
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 	hashVal := hfunc.Sum32()

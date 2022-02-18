@@ -10,12 +10,16 @@ replace (
 	pair => ../pair
 	recordUtil => ../recordUtil
 	skipList => ../skipList
+	hyperLogLog => ../hyperLogLog
+	countMinSketch => ../countMinSketch
 )
 
 require (
 	memTable v1.0.0
 	SSTable v1.0.0
 	recordUtil v1.0.0
+	hyperLogLog v1.0.0
+	countMinSketch v1.0.0
 )
 
 require (

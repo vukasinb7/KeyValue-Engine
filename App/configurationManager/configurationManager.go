@@ -11,23 +11,29 @@ import (
 )
 
 type config struct {
-	MemTableThreshold uint32 `json:"MemTableThreshold"`
-	MemTableCapacity  uint32 `json:"MemTableCapacity"`
-	WalSegmentSize    uint64 `json:"WalSegmentSize"`
-	WalDirectory      string `json:"WalDirectory"`
-	LowWaterMark      uint32 `json:"LowWaterMark"`
-	DataFile          string `json:"DataFile"`
-	CacheCapacity     uint32 `json:"CacheCapacity"`
-	LSMDirectory      string `json:"LSMDirectory"`
+	MemTableThreshold     uint32 `json:"MemTableThreshold"`
+	MemTableCapacity      uint32 `json:"MemTableCapacity"`
+	WalSegmentSize        uint64 `json:"WalSegmentSize"`
+	WalDirectory          string `json:"WalDirectory"`
+	LowWaterMark          uint32 `json:"LowWaterMark"`
+	DataFile              string `json:"DataFile"`
+	CacheCapacity         uint32 `json:"CacheCapacity"`
+	LSMDirectory          string `json:"LSMDirectory"`
+	LSMlevelNum           uint32 `json:"LSMlevelNum"`
+	TokenBucketNumOfTries uint32 `json:"TokenBucketNumOfTries"`
+	TokenBucketInterval   uint32 `json:"TokenBucketInterval"`
 }
 
-func (c *config) GetMemTableThreshold() uint32 { return c.MemTableThreshold }
-func (c *config) GetMemTableCapacity() uint32  { return c.MemTableCapacity }
-func (c *config) GetWalSegmentSize() uint64    { return c.WalSegmentSize }
-func (c *config) GetWalDirectory() string      { return c.WalDirectory }
-func (c *config) GetLowWaterMark() uint32      { return c.LowWaterMark }
-func (c *config) GetDataFile() string          { return c.DataFile }
-func (c *config) GetLSMDirectory() string      { return c.LSMDirectory }
+func (c *config) GetMemTableThreshold() uint32     { return c.MemTableThreshold }
+func (c *config) GetMemTableCapacity() uint32      { return c.MemTableCapacity }
+func (c *config) GetWalSegmentSize() uint64        { return c.WalSegmentSize }
+func (c *config) GetWalDirectory() string          { return c.WalDirectory }
+func (c *config) GetLowWaterMark() uint32          { return c.LowWaterMark }
+func (c *config) GetDataFile() string              { return c.DataFile }
+func (c *config) GetLSMDirectory() string          { return c.LSMDirectory }
+func (c *config) GetLSMlevelNum() uint32           { return c.LSMlevelNum }
+func (c *config) GetTokenBucketNumOfTries() uint32 { return c.TokenBucketNumOfTries }
+func (c *config) GetTokenBucketInterval() uint32   { return c.TokenBucketInterval }
 
 var UserConfiguration config
 var DefaultConfiguration config

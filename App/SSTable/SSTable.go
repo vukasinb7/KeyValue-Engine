@@ -2,8 +2,10 @@ package SSTable
 
 import (
 	"bloomFilter"
+	"countMinSketch"
 	"encoding/binary"
 	"hash/crc32"
+	"hyperLogLog"
 	"io/ioutil"
 	"log"
 	"merkleTree"
@@ -59,10 +61,6 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	filterFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Filter.bin")
-	if err != nil {
-		return 0, err
-	}
 	dataFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Data.bin")
 	if err != nil {
 		return 0, err
@@ -71,7 +69,19 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	it := 0
+
+	filterFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Filter.bin")
+	if err != nil {
+		return 0, err
+	}
+	hllFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-HLL.bin")
+	if err != nil {
+		return 0, err
+	}
+	cmsFile, err := os.Create(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-CMS.bin")
+	if err != nil {
+		return 0, err
+	}
 
 	firstKeySize := len(pairs[0].Key)
 	lastKeySize := len(pairs[len(pairs)-1].Key)
@@ -89,8 +99,13 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	var merkleTreeData [][]byte
 
+	var merkleTreeData [][]byte
+	bloom := bloomFilter.NewBloomFilter(0.001, len(pairs))
+	hll := hyperLogLog.NewHyperLogLog(10)
+	cms := countMinSketch.NewCountMinSketch(0.01, 0.01)
+
+	it := 0
 	for _, record := range pairs {
 		recordSize := recordUtil.CRC_SIZE + recordUtil.TOMBSTONE_SIZE + recordUtil.TIMESTAMP_SIZE + recordUtil.KEY_SIZE + recordUtil.VALUE_SIZE + len(record.Key) + len(record.Value)
 		newRecord := make([]byte, recordSize, recordSize)
@@ -149,27 +164,45 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint64, error) {
 		}
 		it++
 
-		bloom := bloomFilter.NewBloomFilter(0.001, len(pairs))
-		bloomBytes := bloom.Encode()
-		_, err = filterFile.Write(bloomBytes)
-		if err != nil {
-			return 0, err
-		}
-
+		bloom.Insert([]byte(record.Key))
+		hll.Insert([]byte(record.Key))
+		cms.Insert([]byte(record.Key))
 	}
+	bloomBytes := bloom.Encode()
+	_, err = filterFile.Write(bloomBytes)
+	if err != nil {
+		return 0, err
+	}
+
+	hllBytes := hll.Encode()
+	_, err = hllFile.Write(hllBytes)
+	if err != nil {
+		return 0, err
+	}
+
+	cmsBytes := cms.Encode()
+	_, err = cmsFile.Write(cmsBytes)
+	if err != nil {
+		return 0, err
+	}
+
 	mr := merkleTree.NewMerkleTree(merkleTreeData)
 	mr.SerializeMerkleTree(metadataFile)
 	tocFile.Write([]byte(dataFile.Name() + "\n"))
 	tocFile.Write([]byte(indexFile.Name() + "\n"))
 	tocFile.Write([]byte(summaryFile.Name() + "\n"))
 	tocFile.Write([]byte(filterFile.Name() + "\n"))
-	tocFile.Write([]byte(metadataFile.Name()))
+	tocFile.Write([]byte(metadataFile.Name() + "\n"))
+	tocFile.Write([]byte(hllFile.Name() + "\n"))
+	tocFile.Write([]byte(cmsFile.Name() + "\n"))
 	indexFile.Close()
 	dataFile.Close()
 	filterFile.Close()
 	tocFile.Close()
 	summaryFile.Close()
 	metadataFile.Close()
+	hllFile.Close()
+	cmsFile.Close()
 
 	stat, _ := os.Stat(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Data.bin")
 	dataLength := stat.Size()

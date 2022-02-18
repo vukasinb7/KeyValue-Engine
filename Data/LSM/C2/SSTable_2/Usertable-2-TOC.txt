@@ -3,3 +3,5 @@ Data/LSM/C2/SSTable_2/Usertable-2-Index.bin
 Data/LSM/C2/SSTable_2/Usertable-2-Summary.bin
 Data/LSM/C2/SSTable_2/Usertable-2-Filter.bin
 Data/LSM/C2/SSTable_2/Usertable-2-Metadata.txt
+Data/LSM/C2/SSTable_2/Usertable-2-HLL.bin
+Data/LSM/C2/SSTable_2/Usertable-2-CMS.bin
