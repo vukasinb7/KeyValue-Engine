@@ -10,7 +10,7 @@ import (
 	"os"
 	"pair"
 	"recordUtil"
-	"strconv"
+	"strings"
 )
 
 type LSM struct {
@@ -34,12 +34,15 @@ func (lsmLvl *LSMlevel) compaction() {
 
 	for i := 0; i < len(levelFolders); i += 2 {
 		if i+1 < len(levelFolders) {
-			data1, err := os.OpenFile(lsmLvl.manager.DirPath()+"/"+levelFolders[i].Name()+"/Usertable-"+strconv.Itoa(i+1)+"-Data.bin", os.O_RDONLY, 0663+3)
+			index := strings.LastIndex(levelFolders[i].Name(), "_")
+			num := levelFolders[i].Name()[index + 1:len(levelFolders[i].Name())]
+			data1, err := os.OpenFile(lsmLvl.manager.DirPath()+"/"+levelFolders[i].Name()+"/Usertable-"+num+"-Data.bin", os.O_RDONLY, 0663+3)
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			data2, err := os.OpenFile(lsmLvl.manager.DirPath()+"/"+levelFolders[i+1].Name()+"/Usertable-"+strconv.Itoa(i+2)+"-Data.bin", os.O_RDONLY, 0663+3)
+			index = strings.LastIndex(levelFolders[i + 1].Name(), "_")
+			num = levelFolders[i + 1].Name()[index + 1:len(levelFolders[i + 1].Name())]
+			data2, err := os.OpenFile(lsmLvl.manager.DirPath()+"/"+levelFolders[i+1].Name()+"/Usertable-"+num+"-Data.bin", os.O_RDONLY, 0663+3)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -206,7 +209,9 @@ func NewLSM(maxLvl uint32, dirPath string) LSM {
 
 		size := uint64(0)
 		for j := 0; j < len(Levelfiles); j++ {
-			fileStat, _ := os.Stat(dirPath + levels[i].Name() + "/" + Levelfiles[j].Name() + "/Usertable-" + strconv.Itoa(j+1) + "-Data.bin")
+			index := strings.LastIndex(Levelfiles[j].Name(), "_")
+			num := Levelfiles[j].Name()[index + 1:len(Levelfiles[j].Name())]
+			fileStat, _ := os.Stat(dirPath + levels[i].Name() + "/" + Levelfiles[j].Name() + "/Usertable-" + num + "-Data.bin")
 			size += uint64(fileStat.Size())
 		}
 		tempLevel := LSMlevel{
