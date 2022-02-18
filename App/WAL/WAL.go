@@ -9,7 +9,6 @@ import (
 	"os"
 	"pair"
 	"recordUtil"
-	"time"
 )
 
 /*
@@ -69,21 +68,15 @@ func CreateWal(segmentSize uint64, parentDirectory string, lwm uint32) Wal {
 	return createdWal
 }
 
-func (wal *Wal) PushRecord(kvPair pair.KVPair, status bool) error {
+func (wal *Wal) PushRecord(kvPair pair.KVPair) error {
 	recordSize := recordUtil.CRC_SIZE + recordUtil.TOMBSTONE_SIZE + recordUtil.TIMESTAMP_SIZE + recordUtil.KEY_SIZE + recordUtil.VALUE_SIZE + len(kvPair.Key) + len(kvPair.Value)
 	newRecord := make([]byte, recordSize, recordSize)
 
 	crc := recordUtil.CRC32(kvPair.Value)
-	currentTime := time.Now()
-	timestamp := currentTime.Unix()
 
 	binary.LittleEndian.PutUint32(newRecord[:], crc)
-	binary.LittleEndian.PutUint64(newRecord[recordUtil.CRC_SIZE:], uint64(timestamp))
-	if status {
-		newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE] = byte(recordUtil.TOMBSTONE_INSERT)
-	} else {
-		newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE] = byte(recordUtil.TOMBSTONE_DELETE)
-	}
+	binary.LittleEndian.PutUint64(newRecord[recordUtil.CRC_SIZE:], kvPair.Timestamp)
+	newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE] = kvPair.Tombstone
 	binary.LittleEndian.PutUint64(newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE+recordUtil.TOMBSTONE_SIZE:], uint64(len(kvPair.Key)))
 	binary.LittleEndian.PutUint64(newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE+recordUtil.TOMBSTONE_SIZE+recordUtil.KEY_SIZE:], uint64(len(kvPair.Value)))
 	for i := 0; i < len(kvPair.Key); i++ {

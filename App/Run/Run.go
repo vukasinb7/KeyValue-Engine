@@ -1,7 +1,7 @@
 package main
 
 import (
-	"SSTable"
+	"LSMTree"
 	"configurationManager"
 	"log"
 	"memTable"
@@ -18,26 +18,18 @@ func main() {
 	w := wal.CreateWal(configurationManager.DefaultConfiguration.WalSegmentSize, configurationManager.DefaultConfiguration.WalDirectory, configurationManager.DefaultConfiguration.LowWaterMark)
 	memtable := memTable.NewMemTable(configurationManager.DefaultConfiguration.MemTableThreshold, configurationManager.DefaultConfiguration.MemTableCapacity)
 	data := configurationManager.ParseData(configurationManager.DefaultConfiguration.DataFile)
-	ss := SSTable.CreateSSTableMng(configurationManager.DefaultConfiguration.GetLSMDirectory())
+	lsm := LSMTree.NewLSM(4, configurationManager.DefaultConfiguration.GetLSMDirectory())
 	for _, val := range data {
-		err := w.PushRecord(val, true)
+		err := w.PushRecord(val)
 		if err != nil {
 			log.Fatal(err)
 		}
 		memtable.Insert(val)
 		if memtable.Size() > memtable.Threshold() {
-			err := ss.CreateSSTable(memtable.Flush())
-			if err != nil {
-				return
-			}
+			lsm.CreateLevelTables(memtable.Flush())
 			w.ResetWAL()
 		}
 
 	}
-	err := ss.CreateSSTable(memtable.Flush())
-	if err != nil {
-		return
-	}
-	w.ResetWAL()
 
 }

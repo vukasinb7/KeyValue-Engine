@@ -1,6 +1,6 @@
 {
-  "MemTableThreshold": 1024,
-  "MemTableCapacity": 2048,
+  "MemTableThreshold": 128,
+  "MemTableCapacity": 256,
   "WalSegmentSize": 1024,
   "WalDirectory": "Data/WAL/",
   "LowWaterMark": 1,

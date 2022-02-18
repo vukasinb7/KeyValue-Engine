@@ -1,6 +1,9 @@
 package skipList
 
-import "pair"
+import (
+	"pair"
+	"time"
+)
 
 // Header file for SkipList structure
 // Contains SkipList and skipListNode structures and constructor for SkipList
@@ -22,7 +25,7 @@ func NewSkipList(maxHeight int) SkipList {
 	next := make([]*skipListNode, maxHeight, maxHeight)
 	next[0] = nil
 	head := &skipListNode{
-		pair: pair.KVPair{"", nil, 0},
+		pair: pair.KVPair{"", nil, 0, uint64(time.Now().UnixNano())},
 		next: next,
 	}
 	skipList := SkipList{

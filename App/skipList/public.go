@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"pair"
+	"time"
 )
 
 func (skipList *SkipList) Insert(kvPair pair.KVPair) bool {
@@ -36,7 +37,7 @@ func (skipList *SkipList) Insert(kvPair pair.KVPair) bool {
 	newNodeHeight := skipList.roll()
 	newNodeNext := make([]*skipListNode, newNodeHeight+1, newNodeHeight+1)
 	newNode := skipListNode{
-		pair: pair.KVPair{kvPair.Key, kvPair.Value, 0},
+		pair: pair.KVPair{kvPair.Key, kvPair.Value, kvPair.Tombstone, kvPair.Timestamp},
 	}
 	for i := skipList.height; i >= 0; i-- {
 		currentLevel := skipList.height - i
@@ -108,7 +109,7 @@ func (skipList *SkipList) Delete(key string) bool {
 	newNodeHeight := skipList.roll()
 	newNodeNext := make([]*skipListNode, newNodeHeight+1, newNodeHeight+1)
 	newNode := skipListNode{
-		pair: pair.KVPair{key, nil, 1},
+		pair: pair.KVPair{key, nil, 1, uint64(time.Now().UnixNano())},
 	}
 	for i := skipList.height; i >= 0; i-- {
 		currentLevel := skipList.height - i

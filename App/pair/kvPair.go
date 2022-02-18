@@ -4,6 +4,7 @@ type KVPair struct {
 	Key       string
 	Value     []byte
 	Tombstone byte
+	Timestamp uint64
 }
 
 func (pair *KVPair) Size() uint32 {

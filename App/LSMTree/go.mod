@@ -15,6 +15,7 @@ replace (
 require (
 	memTable v1.0.0
 	SSTable v1.0.0
+	recordUtil v1.0.0
 )
 
 require (
@@ -22,5 +23,4 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	merkleTree v1.0.0 // indirect
 	pair v1.0.0 // indirect
-	recordUtil v1.0.0 // indirect
 )

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"pair"
+	"time"
 )
 
 type config struct {
@@ -70,7 +71,9 @@ func ParseData(dataFilePath string) []pair.KVPair {
 				key = string(temp)
 
 			} else {
-				result = append(result, pair.KVPair{key, temp, 0})
+				currentTime := time.Now()
+				timestamp := currentTime.UnixNano()
+				result = append(result, pair.KVPair{key, temp[0 : len(temp)-1], 0, uint64(timestamp)})
 			}
 			temp = nil
 			brojac++

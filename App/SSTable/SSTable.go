@@ -11,7 +11,6 @@ import (
 	"pair"
 	"recordUtil"
 	"strconv"
-	"time"
 )
 
 type SSTableManager struct {
@@ -19,9 +18,14 @@ type SSTableManager struct {
 	dirPath      string
 }
 
+func (ss *SSTableManager) DirPath() string {
+	return ss.dirPath
+}
+
 func CRC32(data []byte) uint32 {
 	return crc32.ChecksumIEEE(data)
 }
+
 func CreateSSTableMng(DirPath string) *SSTableManager {
 	tableFolders, err := ioutil.ReadDir(DirPath)
 	if err != nil {
@@ -36,7 +40,7 @@ func CreateSSTableMng(DirPath string) *SSTableManager {
 
 	return &ss
 }
-func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint32, error) {
+func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint64, error) {
 	N := 10
 	folderName := ss.dirPath + "/SSTable_" + strconv.Itoa(int(ss.currentIndex))
 	err := os.Mkdir(folderName, 0664+2)
@@ -87,17 +91,14 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint32, error) {
 	}
 	var merkleTreeData [][]byte
 
-	dataLength := 0
 	for _, record := range pairs {
 		recordSize := recordUtil.CRC_SIZE + recordUtil.TOMBSTONE_SIZE + recordUtil.TIMESTAMP_SIZE + recordUtil.KEY_SIZE + recordUtil.VALUE_SIZE + len(record.Key) + len(record.Value)
 		newRecord := make([]byte, recordSize, recordSize)
 
 		crc := recordUtil.CRC32(record.Value)
-		currentTime := time.Now()
-		timestamp := currentTime.Unix()
 
 		binary.LittleEndian.PutUint32(newRecord[:], crc)
-		binary.LittleEndian.PutUint64(newRecord[recordUtil.CRC_SIZE:], uint64(timestamp))
+		binary.LittleEndian.PutUint64(newRecord[recordUtil.CRC_SIZE:], record.Timestamp)
 
 		newRecord[recordUtil.CRC_SIZE+recordUtil.TIMESTAMP_SIZE] = record.Tombstone
 
@@ -120,7 +121,6 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint32, error) {
 		if err != nil {
 			return 0, err
 		}
-		dataLength = len(newRecord)
 
 		indexSize := recordUtil.KEY_SIZE + len(record.Key) + 8
 		indexRecord := make([]byte, indexSize, indexSize)
@@ -170,7 +170,11 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint32, error) {
 	tocFile.Close()
 	summaryFile.Close()
 	metadataFile.Close()
+
+	stat, _ := os.Stat(folderName + "/Usertable-" + strconv.Itoa(int(ss.currentIndex)) + "-Data.bin")
+	dataLength := stat.Size()
 	ss.currentIndex++
-	return uint32(dataLength), nil
+
+	return uint64(dataLength), nil
 
 }
