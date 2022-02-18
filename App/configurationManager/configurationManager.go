@@ -32,6 +32,7 @@ func (c *config) GetLowWaterMark() uint32          { return c.LowWaterMark }
 func (c *config) GetDataFile() string              { return c.DataFile }
 func (c *config) GetLSMDirectory() string          { return c.LSMDirectory }
 func (c *config) GetLSMlevelNum() uint32           { return c.LSMlevelNum }
+func (c *config) GetCacheCapacity() uint32         { return c.CacheCapacity }
 func (c *config) GetTokenBucketNumOfTries() uint32 { return c.TokenBucketNumOfTries }
 func (c *config) GetTokenBucketInterval() uint32   { return c.TokenBucketInterval }
 

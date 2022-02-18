@@ -43,7 +43,6 @@ func CreateSSTableMng(DirPath string) *SSTableManager {
 	return &ss
 }
 func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint64, error) {
-	N := 10
 	folderName := ss.dirPath + "/SSTable_" + strconv.Itoa(int(ss.currentIndex))
 	err := os.Mkdir(folderName, 0664+2)
 	if err != nil {
@@ -105,7 +104,6 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint64, error) {
 	hll := hyperLogLog.NewHyperLogLog(10)
 	cms := countMinSketch.NewCountMinSketch(0.01, 0.01)
 
-	it := 0
 	for _, record := range pairs {
 		recordSize := recordUtil.CRC_SIZE + recordUtil.TOMBSTONE_SIZE + recordUtil.TIMESTAMP_SIZE + recordUtil.KEY_SIZE + recordUtil.VALUE_SIZE + len(record.Key) + len(record.Value)
 		newRecord := make([]byte, recordSize, recordSize)
@@ -149,20 +147,18 @@ func (ss *SSTableManager) CreateSSTable(pairs []pair.KVPair) (uint64, error) {
 		if err != nil {
 			return 0, err
 		}
-		if it%N == 0 {
-			summarySize := recordUtil.KEY_SIZE + len(record.Key) + 8
-			summaryRecord := make([]byte, summarySize, summarySize)
-			binary.LittleEndian.PutUint64(summaryRecord[:], uint64(len(record.Key)))
-			for i := 0; i < len(record.Key); i++ {
-				summaryRecord[recordUtil.KEY_SIZE+i] = record.Key[i]
-			}
-			binary.LittleEndian.PutUint64(summaryRecord[recordUtil.KEY_SIZE+len(record.Key):], uint64(indexAddress))
-			_, err = summaryFile.Write(summaryRecord)
-			if err != nil {
-				return 0, err
-			}
+
+		summarySize := recordUtil.KEY_SIZE + len(record.Key) + 8
+		summaryRecord := make([]byte, summarySize, summarySize)
+		binary.LittleEndian.PutUint64(summaryRecord[:], uint64(len(record.Key)))
+		for i := 0; i < len(record.Key); i++ {
+			summaryRecord[recordUtil.KEY_SIZE+i] = record.Key[i]
 		}
-		it++
+		binary.LittleEndian.PutUint64(summaryRecord[recordUtil.KEY_SIZE+len(record.Key):], uint64(indexAddress))
+		_, err = summaryFile.Write(summaryRecord)
+		if err != nil {
+			return 0, err
+		}
 
 		bloom.Insert([]byte(record.Key))
 		hll.Insert([]byte(record.Key))

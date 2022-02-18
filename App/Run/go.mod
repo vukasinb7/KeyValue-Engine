@@ -25,6 +25,7 @@ require (
 	configurationManager v0.0.0-00010101000000-000000000000
 	memTable v1.0.0
 	wal v1.0.0
+	lru v1.0.0
 )
 
 require (
