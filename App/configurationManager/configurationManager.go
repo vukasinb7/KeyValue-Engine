@@ -2,9 +2,9 @@ package configurationManager
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"pair"
 	"time"
@@ -36,30 +36,76 @@ func (c *config) GetCacheCapacity() uint32         { return c.CacheCapacity }
 func (c *config) GetTokenBucketNumOfTries() uint32 { return c.TokenBucketNumOfTries }
 func (c *config) GetTokenBucketInterval() uint32   { return c.TokenBucketInterval }
 
-var UserConfiguration config
-var DefaultConfiguration config
+var Configuration config
 
 func LoadUserConfiguration(filePath string) {
-	parseJSON(filePath, &UserConfiguration)
+	err := parseJSON(filePath, &Configuration)
+	if err != nil {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if Configuration.MemTableThreshold <= 0 {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if Configuration.MemTableCapacity <= 0 {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if Configuration.WalSegmentSize <= 0 {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if !Exists(Configuration.WalDirectory) {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if Configuration.LowWaterMark < 0 {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if !Exists(Configuration.DataFile) {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if !Exists(Configuration.LSMDirectory) {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if Configuration.LSMlevelNum <= 0 {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if Configuration.CacheCapacity <= 0 {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if Configuration.TokenBucketNumOfTries <= 0 {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	} else if Configuration.TokenBucketInterval <= 0 {
+		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		return
+	}
+
 }
 
 func LoadDefaultConfiguration(filePath string) {
-	parseJSON(filePath, &DefaultConfiguration)
+	err := parseJSON(filePath, &Configuration)
+	if err != nil {
+		return
+	}
 }
 
-func parseJSON(filePath string, destination *config) {
+func parseJSON(filePath string, destination *config) error {
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	defer jsonFile.Close()
+	defer func(jsonFile *os.File) {
+		err := jsonFile.Close()
+		if err != nil {
+
+		}
+	}(jsonFile)
 
 	byteArr, _ := ioutil.ReadAll(jsonFile)
 
 	err = json.Unmarshal(byteArr, destination)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
 func ParseData(dataFilePath string) []pair.KVPair {
@@ -89,4 +135,14 @@ func ParseData(dataFilePath string) []pair.KVPair {
 		}
 	}
 	return result
+}
+func Exists(name string) bool {
+	_, err := os.Stat(name)
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return false
 }

@@ -20,7 +20,7 @@ import (
 )
 
 func insertTestData() {
-	data := configurationManager.ParseData(configurationManager.DefaultConfiguration.DataFile)
+	data := configurationManager.ParseData(configurationManager.Configuration.DataFile)
 	for _, val := range data {
 		err := w.PushRecord(val)
 		if err != nil {
@@ -42,14 +42,15 @@ var lruCache lru.LRUCache
 var tb tokenBucket.TokenBucket
 
 func main() {
-	configurationManager.LoadDefaultConfiguration("Data/defaultConfiguration.json")
-	w = wal.CreateWal(configurationManager.DefaultConfiguration.WalSegmentSize, configurationManager.DefaultConfiguration.WalDirectory, configurationManager.DefaultConfiguration.LowWaterMark)
-	memtable = memTable.NewMemTable(configurationManager.DefaultConfiguration.MemTableThreshold, configurationManager.DefaultConfiguration.MemTableCapacity)
-	lsm = LSMTree.NewLSM(configurationManager.DefaultConfiguration.GetLSMlevelNum(), configurationManager.DefaultConfiguration.GetLSMDirectory())
-	lruCache = lru.NewLRU(configurationManager.DefaultConfiguration.GetCacheCapacity())
-	tb = tokenBucket.NewTokenBucket(configurationManager.DefaultConfiguration.GetTokenBucketNumOfTries(), configurationManager.DefaultConfiguration.GetTokenBucketInterval())
+	configurationManager.LoadDefaultConfiguration("Data/userConfiguration.json")
+	fmt.Println(configurationManager.Configuration.WalSegmentSize)
+	w = wal.CreateWal(configurationManager.Configuration.WalSegmentSize, configurationManager.Configuration.WalDirectory, configurationManager.Configuration.LowWaterMark)
+	memtable = memTable.NewMemTable(configurationManager.Configuration.MemTableThreshold, configurationManager.Configuration.MemTableCapacity)
+	lsm = LSMTree.NewLSM(configurationManager.Configuration.GetLSMlevelNum(), configurationManager.Configuration.GetLSMDirectory())
+	lruCache = lru.NewLRU(configurationManager.Configuration.GetCacheCapacity())
+	tb = tokenBucket.NewTokenBucket(configurationManager.Configuration.GetTokenBucketNumOfTries(), configurationManager.Configuration.GetTokenBucketInterval())
 
-	fmt.Println(Get("1001"))
+	//fmt.Println(Get("1001"))
 }
 
 func Delete(key string) bool {
