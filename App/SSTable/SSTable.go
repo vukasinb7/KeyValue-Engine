@@ -4,6 +4,7 @@ import (
 	"bloomFilter"
 	"countMinSketch"
 	"encoding/binary"
+	"fmt"
 	"hash/crc32"
 	"hyperLogLog"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 	"pair"
 	"recordUtil"
 	"strconv"
+	"strings"
 )
 
 type SSTableManager struct {
@@ -33,10 +35,26 @@ func CreateSSTableMng(DirPath string) *SSTableManager {
 	if err != nil {
 		log.Fatal(err)
 	}
-	currentIndex := len(tableFolders) + 1
 
+	num2, _ := strconv.ParseInt("1", 10, 32)
+	currentIndex := uint32(num2)
+	if len(tableFolders) > 0 {
+		maxNum := uint32(0)
+		for i := 0; i < len(tableFolders); i++ {
+			index := strings.LastIndex(tableFolders[i].Name(), "_")
+			num := tableFolders[i].Name()[index+1 : len(tableFolders[i].Name())]
+			temp, _ := strconv.ParseInt(num, 10, 32)
+			if uint32(temp) > maxNum {
+				maxNum = uint32(temp)
+			}
+
+		}
+		currentIndex = maxNum + 1
+	}
+
+	fmt.Println("Current index je ", currentIndex)
 	ss := SSTableManager{
-		currentIndex: uint32(currentIndex),
+		currentIndex: currentIndex,
 		dirPath:      DirPath,
 	}
 

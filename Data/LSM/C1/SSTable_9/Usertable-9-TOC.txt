@@ -1,7 +1,0 @@
-Data/LSM/C1/SSTable_9/Usertable-9-Data.bin
-Data/LSM/C1/SSTable_9/Usertable-9-Index.bin
-Data/LSM/C1/SSTable_9/Usertable-9-Summary.bin
-Data/LSM/C1/SSTable_9/Usertable-9-Filter.bin
-Data/LSM/C1/SSTable_9/Usertable-9-Metadata.txt
-Data/LSM/C1/SSTable_9/Usertable-9-HLL.bin
-Data/LSM/C1/SSTable_9/Usertable-9-CMS.bin

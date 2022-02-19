@@ -3,6 +3,7 @@ package main
 import (
 	"LSMTree"
 	"bloomFilter"
+	"bufio"
 	"configurationManager"
 	"encoding/binary"
 	"fmt"
@@ -43,14 +44,59 @@ var tb tokenBucket.TokenBucket
 
 func main() {
 	configurationManager.LoadDefaultConfiguration("Data/userConfiguration.json")
-	fmt.Println(configurationManager.Configuration.WalSegmentSize)
 	w = wal.CreateWal(configurationManager.Configuration.WalSegmentSize, configurationManager.Configuration.WalDirectory, configurationManager.Configuration.LowWaterMark)
 	memtable = memTable.NewMemTable(configurationManager.Configuration.MemTableThreshold, configurationManager.Configuration.MemTableCapacity)
 	lsm = LSMTree.NewLSM(configurationManager.Configuration.GetLSMlevelNum(), configurationManager.Configuration.GetLSMDirectory())
 	lruCache = lru.NewLRU(configurationManager.Configuration.GetCacheCapacity())
 	tb = tokenBucket.NewTokenBucket(configurationManager.Configuration.GetTokenBucketNumOfTries(), configurationManager.Configuration.GetTokenBucketInterval())
+	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		fmt.Println("\nMenu")
+		fmt.Println("------------------------------")
+		fmt.Println("1. Insert data from file")
+		fmt.Println("2. Put")
+		fmt.Println("3. Get")
+		fmt.Println("4. Delete")
+		fmt.Println("5. Exit")
+		fmt.Println("------------------------------")
+		fmt.Print("Enter option: ")
+		var option string
+		scanner.Scan()
+		option = scanner.Text()
+		if option == "1" {
+			insertTestData()
+		} else if option == "2" {
+			fmt.Print("Enter key: ")
+			var key string
+			scanner.Scan()
+			key = scanner.Text()
+			fmt.Print("Enter value: ")
+			var value []byte
+			scanner.Scan()
+			value = scanner.Bytes()
+			Put(key, value)
 
-	//fmt.Println(Get("1001"))
+		} else if option == "3" {
+			fmt.Print("Enter key: ")
+			var key string
+			scanner.Scan()
+			key = scanner.Text()
+			fmt.Println(Get(key))
+
+		} else if option == "4" {
+			fmt.Print("Enter key: ")
+			var key string
+			scanner.Scan()
+			key = scanner.Text()
+			Delete(key)
+
+		} else if option == "5" {
+			lsm.CreateLevelTables(memtable.Flush())
+			os.Exit(0)
+		} else {
+			fmt.Println("Invalid input")
+		}
+	}
 }
 
 func Delete(key string) bool {
