@@ -9,6 +9,7 @@ import (
 	"os"
 	"pair"
 	"recordUtil"
+	"strconv"
 	"strings"
 )
 
@@ -191,6 +192,10 @@ func NewLSM(maxLvl uint32, dirPath string) LSM {
 	lsm := LSM{
 		maxLvl:  maxLvl,
 		dirPath: dirPath,
+	}
+
+	for i := 0; i < int(maxLvl); i++ {
+		_ = os.MkdirAll(dirPath+"/C"+strconv.Itoa(i+1), os.ModePerm)
 	}
 
 	levels, err := ioutil.ReadDir(dirPath)

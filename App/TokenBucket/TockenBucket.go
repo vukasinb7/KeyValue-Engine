@@ -1,4 +1,4 @@
-package tockenBucket
+package tokenBucket
 
 import (
 	"time"
@@ -11,7 +11,7 @@ type TokenBucket struct {
 	lastTimestamp  time.Time
 }
 
-func NewTokenBucket(maxTries, resetTimer uint32) *TokenBucket {
+func NewTokenBucket(maxTries, resetTimer uint32) TokenBucket {
 	tb := TokenBucket{
 		maxTries:       maxTries,
 		remainingTries: maxTries,
@@ -19,7 +19,7 @@ func NewTokenBucket(maxTries, resetTimer uint32) *TokenBucket {
 		lastTimestamp:  time.Time{},
 	}
 
-	return &tb
+	return tb
 }
 
 func (tb *TokenBucket) CheckInputTimer() bool {

@@ -109,7 +109,7 @@ func (skipList *SkipList) Delete(key string) bool {
 	newNodeHeight := skipList.roll()
 	newNodeNext := make([]*skipListNode, newNodeHeight+1, newNodeHeight+1)
 	newNode := skipListNode{
-		pair: pair.KVPair{key, nil, 1, uint64(time.Now().UnixNano())},
+		pair: pair.KVPair{key, []byte{}, 1, uint64(time.Now().UnixNano())},
 	}
 	for i := skipList.height; i >= 0; i-- {
 		currentLevel := skipList.height - i

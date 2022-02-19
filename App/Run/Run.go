@@ -11,8 +11,11 @@ import (
 	"lru"
 	"memTable"
 	"os"
+	"pair"
 	"recordUtil"
 	"strings"
+	"time"
+	"tokenBucket"
 	"wal"
 )
 
@@ -24,6 +27,7 @@ func insertTestData() {
 			log.Fatal(err)
 		}
 		memtable.Insert(val)
+		lruCache.Set(val.Key, val.Value, val.Tombstone)
 		if memtable.Size() > memtable.Threshold() {
 			lsm.CreateLevelTables(memtable.Flush())
 			w.ResetWAL()
@@ -35,28 +39,89 @@ var memtable memTable.MemTable
 var w wal.Wal
 var lsm LSMTree.LSM
 var lruCache lru.LRUCache
+var tb tokenBucket.TokenBucket
 
 func main() {
 	configurationManager.LoadDefaultConfiguration("Data/defaultConfiguration.json")
 	w = wal.CreateWal(configurationManager.DefaultConfiguration.WalSegmentSize, configurationManager.DefaultConfiguration.WalDirectory, configurationManager.DefaultConfiguration.LowWaterMark)
 	memtable = memTable.NewMemTable(configurationManager.DefaultConfiguration.MemTableThreshold, configurationManager.DefaultConfiguration.MemTableCapacity)
-	lsm = LSMTree.NewLSM(4, configurationManager.DefaultConfiguration.GetLSMDirectory())
+	lsm = LSMTree.NewLSM(configurationManager.DefaultConfiguration.GetLSMlevelNum(), configurationManager.DefaultConfiguration.GetLSMDirectory())
 	lruCache = lru.NewLRU(configurationManager.DefaultConfiguration.GetCacheCapacity())
+	tb = tokenBucket.NewTokenBucket(configurationManager.DefaultConfiguration.GetTokenBucketNumOfTries(), configurationManager.DefaultConfiguration.GetTokenBucketInterval())
 
-	fmt.Println(string(get("1054")))
-	fmt.Println(string(get("1054")))
+	fmt.Println(Get("1001"))
 }
 
-func get(key string) []byte {
-	value, err := memtable.Get(key)
-	if err == nil {
-		lruCache.Set(key, value)
+func Delete(key string) bool {
+	value := Get(key)
+	if tb.CheckInputTimer() {
+		if value != nil {
+			tombstone := byte(1)
+			currentTime := time.Now()
+			timestamp := currentTime.UnixNano()
+			newPair := pair.KVPair{Key: key, Value: value, Tombstone: tombstone, Timestamp: uint64(timestamp)}
+
+			err := w.PushRecord(newPair)
+			if err != nil {
+				log.Fatal(err)
+			}
+			memtable.Delete(newPair.Key)
+			lruCache.Set(key, value, tombstone)
+			if memtable.Size() > memtable.Threshold() {
+				lsm.CreateLevelTables(memtable.Flush())
+				w.ResetWAL()
+			}
+			return true
+		} else {
+			log.Println("Record not found")
+			return false
+		}
+
+	} else {
+		log.Println("Too many inputs")
+		return false
+	}
+}
+
+func Put(key string, value []byte) bool {
+	if tb.CheckInputTimer() {
+		tombstone := byte(0)
+		currentTime := time.Now()
+		timestamp := currentTime.UnixNano()
+		newPair := pair.KVPair{key, value, tombstone, uint64(timestamp)}
+
+		err := w.PushRecord(newPair)
+		if err != nil {
+			log.Fatal(err)
+		}
+		memtable.Insert(newPair)
+		lruCache.Set(key, value, tombstone)
+		if memtable.Size() > memtable.Threshold() {
+			lsm.CreateLevelTables(memtable.Flush())
+			w.ResetWAL()
+		}
+		return true
+	} else {
+		log.Println("Too many inputs")
+		return false
+	}
+}
+
+func Get(key string) []byte {
+	value, tombstone, err := memtable.Get(key)
+	if err == nil && tombstone == 0 {
+		lruCache.Set(key, value, tombstone)
 		return value
+	} else if err == nil && tombstone == 1 {
+		lruCache.Set(key, value, tombstone)
+		return nil
 	}
 
-	value = lruCache.Get(key)
-	if value != nil {
+	value, tombstone = lruCache.Get(key)
+	if value != nil && tombstone == 0 {
 		return value
+	} else if value != nil && tombstone == 1 {
+		return nil
 	}
 
 	levelFolders, err := ioutil.ReadDir(lsm.DirPath())
@@ -125,8 +190,8 @@ func get(key string) []byte {
 							break
 						}
 
-						var currentAddress uint64
-						err = binary.Read(summaryFile, binary.LittleEndian, &currentAddress)
+						var currentIndexAddress uint64
+						err = binary.Read(summaryFile, binary.LittleEndian, &currentIndexAddress)
 						if err != nil {
 							log.Fatal()
 						}
@@ -135,25 +200,22 @@ func get(key string) []byte {
 							indexName := lsm.DirPath() + "/" + levelFolders[i].Name() + "/" + SSTablesFolders[j].Name() + "/Usertable-" + num + "-Index.bin"
 							indexFile, _ := os.OpenFile(indexName, os.O_RDONLY, 0665+1)
 
-							_, err = indexFile.Seek(int64(currentAddress), 0)
+							_, err = indexFile.Seek(int64(currentIndexAddress), 0)
 							if err != nil {
 								return nil
 							}
 
-							indexKeySize := make([]byte, recordUtil.KEY_SIZE, recordUtil.KEY_SIZE)
-							err := binary.Read(indexFile, binary.LittleEndian, &indexKeySize)
+							_, err = indexFile.Seek(recordUtil.KEY_SIZE, 1)
 							if err != nil {
-								log.Fatal()
+								return nil
+							}
+							_, err = indexFile.Seek(int64(binary.LittleEndian.Uint64(currentKeySize)), 1)
+							if err != nil {
+								return nil
 							}
 
-							indexKey := make([]byte, binary.LittleEndian.Uint64(indexKeySize), binary.LittleEndian.Uint64(indexKeySize))
-							err = binary.Read(indexFile, binary.LittleEndian, &indexKey)
-							if err != nil {
-								log.Fatal()
-							}
-
-							var currentIndexAddress uint64
-							err = binary.Read(indexFile, binary.LittleEndian, &currentIndexAddress)
+							var dataAddress uint64
+							err = binary.Read(indexFile, binary.LittleEndian, &dataAddress)
 							if err != nil {
 								log.Fatal()
 							}
@@ -162,7 +224,7 @@ func get(key string) []byte {
 							dataName := lsm.DirPath() + "/" + levelFolders[i].Name() + "/" + SSTablesFolders[j].Name() + "/Usertable-" + num + "-Data.bin"
 							dataFile, _ := os.OpenFile(dataName, os.O_RDONLY, 0665+1)
 
-							_, err = dataFile.Seek(int64(currentIndexAddress), 0)
+							_, err = dataFile.Seek(int64(dataAddress), 0)
 							if err != nil {
 								return nil
 							}
@@ -185,10 +247,9 @@ func get(key string) []byte {
 								log.Fatal()
 							}
 
-							keySize := make([]byte, recordUtil.KEY_SIZE, recordUtil.KEY_SIZE)
-							err = binary.Read(dataFile, binary.LittleEndian, &keySize)
+							_, err = dataFile.Seek(recordUtil.KEY_SIZE, 1)
 							if err != nil {
-								log.Fatal()
+								return nil
 							}
 
 							valSize := make([]byte, recordUtil.VALUE_SIZE, recordUtil.VALUE_SIZE)
@@ -197,10 +258,9 @@ func get(key string) []byte {
 								log.Fatal()
 							}
 
-							newKey := make([]byte, binary.LittleEndian.Uint64(keySize), binary.LittleEndian.Uint64(keySize))
-							err = binary.Read(dataFile, binary.LittleEndian, &newKey)
+							_, err = dataFile.Seek(int64(binary.LittleEndian.Uint64(currentKeySize)), 1)
 							if err != nil {
-								log.Fatal()
+								return nil
 							}
 
 							value := make([]byte, binary.LittleEndian.Uint64(valSize), binary.LittleEndian.Uint64(valSize))
@@ -213,8 +273,10 @@ func get(key string) []byte {
 								log.Fatal()
 							}
 
-							lruCache.Set(key, value)
-							return value
+							lruCache.Set(key, value, tStone[0])
+							if tStone[0] == 0 {
+								return value
+							}
 						}
 					}
 					summaryFile.Close()

@@ -54,11 +54,11 @@ func (memTable *MemTable) Threshold() uint32 {
 	return memTable.threshold
 }
 
-func (memTable *MemTable) Get(key string) ([]byte, error) {
-	value, _, err := memTable.list.Get(key)
-	if err != nil {
-		return nil, err
+func (memTable *MemTable) Get(key string) ([]byte, byte, error) {
+	value, tStone, err := memTable.list.Get(key)
+	if err == nil {
+		return value, tStone, nil
 	} else {
-		return value, nil
+		return nil, 1, err
 	}
 }

@@ -10,8 +10,9 @@ type Cache interface {
 }
 
 type cacheMapElement struct {
-	el    *list.Element
-	value []byte
+	el        *list.Element
+	value     []byte
+	tombstone byte
 }
 
 type LRUCache struct {
@@ -28,23 +29,24 @@ func NewLRU(cap uint32) LRUCache {
 	}
 }
 
-func (lru *LRUCache) Get(key string) []byte {
+func (lru *LRUCache) Get(key string) ([]byte, byte) {
 	cMapEl, exists := lru.m[key]
 	if !exists {
-		return nil
+		return nil, 1
 	} else {
 		lru.l.MoveToFront(cMapEl.el)
-		return cMapEl.value
+		return cMapEl.value, cMapEl.tombstone
 	}
 }
 
-func (lru *LRUCache) Set(key string, value []byte) {
+func (lru *LRUCache) Set(key string, value []byte, tombstone byte) {
 	cMapEl, exists := lru.m[key]
 	if !exists {
 		newEl := lru.l.PushFront(key)
 		lru.m[key] = &cacheMapElement{
-			el:    newEl,
-			value: value,
+			el:        newEl,
+			value:     value,
+			tombstone: tombstone,
 		}
 
 		if uint32(lru.l.Len()) > lru.cap {
@@ -55,15 +57,7 @@ func (lru *LRUCache) Set(key string, value []byte) {
 		}
 	} else {
 		cMapEl.value = value
+		cMapEl.tombstone = tombstone
 		lru.l.MoveToFront(cMapEl.el)
 	}
-}
-
-func main() {
-	cache := NewLRU(3)
-	cache.Set("asd", []byte("vule"))
-	cache.Set("aaa", []byte("jole"))
-	cache.Set("bbb", []byte("dule"))
-	cache.Set("sss", []byte("bule"))
-
 }

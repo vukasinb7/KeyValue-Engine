@@ -16,7 +16,7 @@ replace (
 	pair => ../pair
 	recordUtil => ../recordUtil
 	skipList => ../skipList
-	tockenBucket => ../tokenBucket
+	tokenBucket => ../tokenBucket
 	wal => ../wal
 )
 
@@ -26,6 +26,7 @@ require (
 	memTable v1.0.0
 	wal v1.0.0
 	lru v1.0.0
+	tokenBucket v1.0.0
 )
 
 require (
