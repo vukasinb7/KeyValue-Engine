@@ -44,11 +44,13 @@ func main() {
 	lruCache = lru.NewLRU(configurationManager.DefaultConfiguration.GetCacheCapacity())
 
 	fmt.Println(string(get("1054")))
+	fmt.Println(string(get("1054")))
 }
 
 func get(key string) []byte {
 	value, err := memtable.Get(key)
 	if err == nil {
+		lruCache.Set(key, value)
 		return value
 	}
 
@@ -211,6 +213,7 @@ func get(key string) []byte {
 								log.Fatal()
 							}
 
+							lruCache.Set(key, value)
 							return value
 						}
 					}
