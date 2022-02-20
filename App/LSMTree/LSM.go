@@ -9,6 +9,7 @@ import (
 	"os"
 	"pair"
 	"recordUtil"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -35,6 +36,18 @@ func (lsmLvl *LSMlevel) compaction() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	sort.Slice(levelFolders, func(y, z int) bool {
+		index1 := strings.LastIndex(levelFolders[y].Name(), "_")
+		num1 := levelFolders[y].Name()[index1+1 : len(levelFolders[y].Name())]
+
+		index2 := strings.LastIndex(levelFolders[z].Name(), "_")
+		num2 := levelFolders[z].Name()[index2+1 : len(levelFolders[z].Name())]
+
+		a, _ := strconv.Atoi(num1)
+		b, _ := strconv.Atoi(num2)
+		return a < b
+	})
 
 	for i := 0; i < len(levelFolders); i += 2 {
 		if i+1 < len(levelFolders) {

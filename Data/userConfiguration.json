@@ -9,5 +9,5 @@
   "LSMDirectory":"Data/LSM/",
   "LSMlevelNum":4,
   "TokenBucketNumOfTries":3,
-  "TokenBucketInterval":3
+  "TokenBucketInterval":10
 }

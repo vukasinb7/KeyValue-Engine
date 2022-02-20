@@ -41,50 +41,57 @@ var Configuration config
 func LoadUserConfiguration(filePath string) {
 	err := parseJSON(filePath, &Configuration)
 	if err != nil {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if Configuration.MemTableThreshold <= 0 {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if Configuration.MemTableCapacity <= 0 {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if Configuration.WalSegmentSize <= 0 {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if !Exists(Configuration.WalDirectory) {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if Configuration.LowWaterMark < 0 {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if !Exists(Configuration.DataFile) {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if !Exists(Configuration.LSMDirectory) {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if Configuration.LSMlevelNum <= 0 {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if Configuration.CacheCapacity <= 0 {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if Configuration.TokenBucketNumOfTries <= 0 {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	} else if Configuration.TokenBucketInterval <= 0 {
-		LoadDefaultConfiguration("Data/defaultConfiguration.json")
+		LoadDefaultConfiguration()
 		return
 	}
 
 }
 
-func LoadDefaultConfiguration(filePath string) {
-	err := parseJSON(filePath, &Configuration)
-	if err != nil {
-		return
-	}
+func LoadDefaultConfiguration() {
+	Configuration.MemTableThreshold = 128
+	Configuration.MemTableCapacity = 256
+	Configuration.WalSegmentSize = 1024
+	Configuration.WalDirectory = "Data/WAL/"
+	Configuration.LowWaterMark = 1
+	Configuration.DataFile = "Data/testData.txt"
+	Configuration.CacheCapacity = 10
+	Configuration.LSMDirectory = "Data/LSM/"
+	Configuration.LSMlevelNum = 4
+	Configuration.TokenBucketNumOfTries = 3
+	Configuration.TokenBucketInterval = 10
 }
 
 func parseJSON(filePath string, destination *config) error {

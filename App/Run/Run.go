@@ -14,6 +14,8 @@ import (
 	"os"
 	"pair"
 	"recordUtil"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 	"tokenBucket"
@@ -43,7 +45,7 @@ var lruCache lru.LRUCache
 var tb tokenBucket.TokenBucket
 
 func main() {
-	configurationManager.LoadDefaultConfiguration("Data/userConfiguration.json")
+	configurationManager.LoadUserConfiguration("Data/userConfiguration.json")
 	w = wal.CreateWal(configurationManager.Configuration.WalSegmentSize, configurationManager.Configuration.WalDirectory, configurationManager.Configuration.LowWaterMark)
 	memtable = memTable.NewMemTable(configurationManager.Configuration.MemTableThreshold, configurationManager.Configuration.MemTableCapacity)
 	lsm = LSMTree.NewLSM(configurationManager.Configuration.GetLSMlevelNum(), configurationManager.Configuration.GetLSMDirectory())
@@ -65,6 +67,7 @@ func main() {
 		option = scanner.Text()
 		if option == "1" {
 			insertTestData()
+
 		} else if option == "2" {
 			fmt.Print("Enter key: ")
 			var key string
@@ -81,7 +84,12 @@ func main() {
 			var key string
 			scanner.Scan()
 			key = scanner.Text()
-			fmt.Println(Get(key))
+			value := Get(key)
+			if value != nil {
+				fmt.Println("\nValue: " + string(value))
+			} else {
+				fmt.Println("\nRecord not found!")
+			}
 
 		} else if option == "4" {
 			fmt.Print("Enter key: ")
@@ -91,10 +99,13 @@ func main() {
 			Delete(key)
 
 		} else if option == "5" {
-			lsm.CreateLevelTables(memtable.Flush())
+			records := memtable.Flush()
+			if len(records) > 0 {
+				lsm.CreateLevelTables(records)
+			}
 			os.Exit(0)
 		} else {
-			fmt.Println("Invalid input")
+			fmt.Println("\nInvalid input!")
 		}
 	}
 }
@@ -118,14 +129,14 @@ func Delete(key string) bool {
 				lsm.CreateLevelTables(memtable.Flush())
 				w.ResetWAL()
 			}
+			fmt.Println("\nRecord deleted successfully!")
 			return true
 		} else {
-			log.Println("Record not found")
+			fmt.Println("\nRecord not found!")
 			return false
 		}
-
 	} else {
-		log.Println("Too many inputs")
+		fmt.Println("\nToo many inputs!")
 		return false
 	}
 }
@@ -147,9 +158,10 @@ func Put(key string, value []byte) bool {
 			lsm.CreateLevelTables(memtable.Flush())
 			w.ResetWAL()
 		}
+		fmt.Println("\nRecord added successfully!")
 		return true
 	} else {
-		log.Println("Too many inputs")
+		fmt.Println("\nToo many inputs!")
 		return false
 	}
 }
@@ -181,6 +193,18 @@ func Get(key string) []byte {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		sort.Slice(SSTablesFolders, func(y, z int) bool {
+			index1 := strings.LastIndex(SSTablesFolders[y].Name(), "_")
+			num1 := SSTablesFolders[y].Name()[index1+1 : len(SSTablesFolders[y].Name())]
+
+			index2 := strings.LastIndex(SSTablesFolders[z].Name(), "_")
+			num2 := SSTablesFolders[z].Name()[index2+1 : len(SSTablesFolders[z].Name())]
+
+			a, _ := strconv.Atoi(num1)
+			b, _ := strconv.Atoi(num2)
+			return a < b
+		})
 
 		for j := len(SSTablesFolders) - 1; j >= 0; j-- {
 			index := strings.LastIndex(SSTablesFolders[j].Name(), "_")
@@ -249,16 +273,16 @@ func Get(key string) []byte {
 
 							_, err = indexFile.Seek(int64(currentIndexAddress), 0)
 							if err != nil {
-								return nil
+								log.Fatal()
 							}
 
 							_, err = indexFile.Seek(recordUtil.KEY_SIZE, 1)
 							if err != nil {
-								return nil
+								log.Fatal()
 							}
 							_, err = indexFile.Seek(int64(binary.LittleEndian.Uint64(currentKeySize)), 1)
 							if err != nil {
-								return nil
+								log.Fatal()
 							}
 
 							var dataAddress uint64
@@ -273,7 +297,7 @@ func Get(key string) []byte {
 
 							_, err = dataFile.Seek(int64(dataAddress), 0)
 							if err != nil {
-								return nil
+								log.Fatal()
 							}
 
 							crc := make([]byte, recordUtil.CRC_SIZE, recordUtil.CRC_SIZE)
@@ -296,7 +320,7 @@ func Get(key string) []byte {
 
 							_, err = dataFile.Seek(recordUtil.KEY_SIZE, 1)
 							if err != nil {
-								return nil
+								log.Fatal()
 							}
 
 							valSize := make([]byte, recordUtil.VALUE_SIZE, recordUtil.VALUE_SIZE)
@@ -307,7 +331,7 @@ func Get(key string) []byte {
 
 							_, err = dataFile.Seek(int64(binary.LittleEndian.Uint64(currentKeySize)), 1)
 							if err != nil {
-								return nil
+								log.Fatal()
 							}
 
 							value := make([]byte, binary.LittleEndian.Uint64(valSize), binary.LittleEndian.Uint64(valSize))
@@ -319,10 +343,14 @@ func Get(key string) []byte {
 							if binary.LittleEndian.Uint32(crc) != recordUtil.CRC32(value) {
 								log.Fatal()
 							}
+							dataFile.Close()
+							summaryFile.Close()
 
 							lruCache.Set(key, value, tStone[0])
 							if tStone[0] == 0 {
 								return value
+							} else {
+								return nil
 							}
 						}
 					}

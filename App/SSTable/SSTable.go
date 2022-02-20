@@ -4,7 +4,6 @@ import (
 	"bloomFilter"
 	"countMinSketch"
 	"encoding/binary"
-	"fmt"
 	"hash/crc32"
 	"hyperLogLog"
 	"io/ioutil"
@@ -52,7 +51,6 @@ func CreateSSTableMng(DirPath string) *SSTableManager {
 		currentIndex = maxNum + 1
 	}
 
-	fmt.Println("Current index je ", currentIndex)
 	ss := SSTableManager{
 		currentIndex: currentIndex,
 		dirPath:      DirPath,
