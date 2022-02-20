@@ -23,7 +23,7 @@ import (
 )
 
 func insertTestData() {
-	data := configurationManager.ParseData(configurationManager.Configuration.DataFile)
+	data := configurationManager.ParseTxtData(configurationManager.Configuration.DataFile)
 	for _, val := range data {
 		err := w.PushRecord(val)
 		if err != nil {

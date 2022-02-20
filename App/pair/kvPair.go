@@ -1,8 +1,8 @@
 package pair
 
 type KVPair struct {
-	Key       string
-	Value     []byte
+	Key       string `json:"Key"`
+	Value     []byte `json:"Value"`
 	Tombstone byte
 	Timestamp uint64
 }

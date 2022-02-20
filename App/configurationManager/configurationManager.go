@@ -115,7 +115,7 @@ func parseJSON(filePath string, destination *config) error {
 	return nil
 }
 
-func ParseData(dataFilePath string) []pair.KVPair {
+func ParseTxtData(dataFilePath string) []pair.KVPair {
 	data, err := ioutil.ReadFile(dataFilePath)
 	if err != nil {
 		fmt.Println("File reading error", err)
@@ -143,6 +143,7 @@ func ParseData(dataFilePath string) []pair.KVPair {
 	}
 	return result
 }
+
 func Exists(name string) bool {
 	_, err := os.Stat(name)
 	if err == nil {

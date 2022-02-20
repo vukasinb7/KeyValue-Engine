@@ -1,0 +1,7 @@
+Data/LSM/C1/SSTable_11/Usertable-11-Data.bin
+Data/LSM/C1/SSTable_11/Usertable-11-Index.bin
+Data/LSM/C1/SSTable_11/Usertable-11-Summary.bin
+Data/LSM/C1/SSTable_11/Usertable-11-Filter.bin
+Data/LSM/C1/SSTable_11/Usertable-11-Metadata.txt
+Data/LSM/C1/SSTable_11/Usertable-11-HLL.bin
+Data/LSM/C1/SSTable_11/Usertable-11-CMS.bin
