@@ -6,7 +6,9 @@ import (
 	"bufio"
 	"configurationManager"
 	"encoding/binary"
+	"errors"
 	"fmt"
+	"hyperLogLog"
 	"io/ioutil"
 	"log"
 	"lru"
@@ -121,6 +123,79 @@ func main() {
 		}
 	}
 }
+
+func CreateHll(key string, values [][]byte, p uint) error{
+	// ================
+	// Description:
+	// ================
+	// 		Creates instance of HyperLogLog and inserts values into it
+	//		Stores the structure in database with the given key
+	//		Returns error if the key already exists
+	check := Get(key)
+	if check != nil{
+		return errors.New("key already in database")
+	} else{
+		hll := hyperLogLog.NewHyperLogLog(p)
+		for _, val := range values{
+			hll.Insert(val)
+		}
+		Put(key, hll.Encode())
+	}
+	return nil
+}
+func InsertIntoHll(key string, values [][]byte) error{
+	// ================
+	// Description:
+	// ================
+	// 		Inserts values into the HyperLogLog with the given key
+	//		Returns error if the key is not corresponding to a HyperLogLog structure
+	bytes := Get(key)
+	hll := hyperLogLog.Decode(bytes)
+	for _, val := range values{
+		hll.Insert(val)
+	}
+	Put(key, hll.Encode())
+	return nil
+}
+func GetCardinality(key string) (float64, error){
+	// ================
+	// Description:
+	// ================
+	// 		Returns cardinality of HyperLogLog with given key
+	//		Returns error if the key is not corresponding to a HyperLogLog structure
+	bytes := Get(key)
+	hll := hyperLogLog.Decode(bytes)
+	return hll.Cardinality(), nil
+}
+
+func CreateBloomFilter(key string, values [][]byte, p float64, n int) error{
+	check := Get(key)
+	if check != nil{
+		return errors.New("key already in database")
+	} else{
+		bFilter := bloomFilter.NewBloomFilter(p, n)
+		for _, val := range values{
+			bFilter.Insert(val)
+		}
+		Put(key, bFilter.Encode())
+	}
+	return nil
+}
+func InsertIntoBloomFilter(key string, values [][]byte) error{
+	bytes := Get(key)
+	bFilter := bloomFilter.Decode(bytes)
+	for _, val := range values{
+		bFilter.Insert(val)
+	}
+	Put(key, bFilter.Encode())
+	return nil
+}
+func BloomFilterContains(key string, value []byte) (bool, error){
+	bytes := Get(key)
+	bFilter := bloomFilter.Decode(bytes)
+	return bFilter.Contains(value), nil
+}
+
 
 func Delete(key string) bool {
 	if tb.CheckInputTimer() {
