@@ -67,7 +67,7 @@ func (hll *HyperLogLog) Cardinality() float64 {
 
 func (hll *HyperLogLog) Encode() []byte {
 	bucketsLen := uint32(len(hll.buckets))
-	SIZE := 20 + bucketsLen
+	SIZE := 24 + bucketsLen
 	output := make([]byte, SIZE, SIZE)
 	binary.LittleEndian.PutUint32(output[:], uint32(hll.p))
 	binary.LittleEndian.PutUint32(output[4:], uint32(hll.m))
@@ -75,7 +75,7 @@ func (hll *HyperLogLog) Encode() []byte {
 	binary.LittleEndian.PutUint32(output[16:], hll.seed)
 	binary.LittleEndian.PutUint32(output[20:], bucketsLen)
 	for i := 0; i < int(bucketsLen); i++ {
-		output[20+i] = hll.buckets[i] // ?????? devara radi li ovo (-Radi)
+		output[24+i] = hll.buckets[i]
 	}
 
 	return output

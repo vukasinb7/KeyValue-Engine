@@ -5,6 +5,7 @@ import (
 	"bloomFilter"
 	"bufio"
 	"configurationManager"
+	"countMinSketch"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -55,14 +56,17 @@ func main() {
 	tb = tokenBucket.NewTokenBucket(configurationManager.Configuration.GetTokenBucketNumOfTries(), configurationManager.Configuration.GetTokenBucketInterval())
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Println("\nMenu")
+		fmt.Println("\nMain menu")
 		fmt.Println("------------------------------")
 		fmt.Println("1. Insert data from file")
 		fmt.Println("2. Put")
 		fmt.Println("3. Get")
 		fmt.Println("4. Delete")
 		fmt.Println("5. Compactions")
-		fmt.Println("6. Exit")
+		fmt.Println("6. HLL")
+		fmt.Println("7. CMS")
+		fmt.Println("8. BF")
+		fmt.Println("9. Exit")
 		fmt.Println("------------------------------")
 		fmt.Print("Enter option: ")
 		var option string
@@ -89,7 +93,7 @@ func main() {
 			key = scanner.Text()
 			value := Get(key)
 			if value != nil {
-				fmt.Println("\nValue: " + string(value))
+				fmt.Println("\nValue: ", value)
 			} else {
 				fmt.Println("\nRecord not found!")
 			}
@@ -113,6 +117,258 @@ func main() {
 			}
 
 		} else if option == "6" {
+			for {
+				fmt.Println("\nHLL menu")
+				fmt.Println("------------------------------")
+				fmt.Println("1. Create new HLL")
+				fmt.Println("2. Insert data in existing HLL")
+				fmt.Println("3. Get Cardinality")
+				fmt.Println("4. Return to main menu")
+				fmt.Println("------------------------------")
+				fmt.Print("Enter option: ")
+				var secondOption string
+				scanner.Scan()
+				secondOption = scanner.Text()
+				if secondOption == "1" {
+					fmt.Print("Enter key: ")
+					var key string
+					scanner.Scan()
+					key = scanner.Text()
+					fmt.Print("Enter values: ")
+					var valuesString string
+					scanner.Scan()
+					valuesString = scanner.Text()
+					fmt.Print("Enter p: ")
+					var pString string
+					scanner.Scan()
+					pString = scanner.Text()
+					values := strings.Split(valuesString, ",")
+					p, _ := strconv.Atoi(pString)
+
+					var bytesArray [][]byte
+					for _, value := range values {
+						bytesArray = append(bytesArray, []byte(value))
+					}
+
+					err := CreateHll(key, bytesArray, uint(p))
+					if err != nil {
+						log.Fatal(err)
+					}
+
+				} else if secondOption == "2" {
+					fmt.Print("Enter key: ")
+					var key string
+					scanner.Scan()
+					key = scanner.Text()
+					fmt.Print("Enter values: ")
+					var valuesString string
+					scanner.Scan()
+					valuesString = scanner.Text()
+					values := strings.Split(valuesString, ",")
+
+					var bytesArray [][]byte
+					for _, value := range values {
+						bytesArray = append(bytesArray, []byte(value))
+					}
+
+					err := InsertIntoHll(key, bytesArray)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+				} else if secondOption == "3" {
+					fmt.Print("Enter key: ")
+					var key string
+					scanner.Scan()
+					key = scanner.Text()
+					value, err := GetCardinality(key)
+					if err != nil {
+						fmt.Println("\nHLL not found!")
+					} else {
+						fmt.Println("\nCardinality: ", value)
+					}
+				} else if secondOption == "4" {
+					break
+				} else {
+					fmt.Println("\nInvalid input!")
+				}
+			}
+
+		} else if option == "7" {
+			for {
+				fmt.Println("\nCMS menu")
+				fmt.Println("------------------------------")
+				fmt.Println("1. Create new CMS")
+				fmt.Println("2. Insert data in existing CMS")
+				fmt.Println("3. Get number of appearances")
+				fmt.Println("4. Return to main menu")
+				fmt.Println("------------------------------")
+				fmt.Print("Enter option: ")
+				var secondOption string
+				scanner.Scan()
+				secondOption = scanner.Text()
+				if secondOption == "1" {
+					fmt.Print("Enter key: ")
+					var key string
+					scanner.Scan()
+					key = scanner.Text()
+					fmt.Print("Enter value: ")
+					var valuesString string
+					scanner.Scan()
+					valuesString = scanner.Text()
+					fmt.Print("Enter precision: ")
+					var precision string
+					scanner.Scan()
+					precision = scanner.Text()
+					fmt.Print("Enter accuracy: ")
+					var accuracy string
+					scanner.Scan()
+					accuracy = scanner.Text()
+					values := strings.Split(valuesString, ",")
+
+					var bytesArray [][]byte
+					for _, value := range values {
+						bytesArray = append(bytesArray, []byte(value))
+					}
+					prs, _ := strconv.ParseFloat(precision, 64)
+					acc, _ := strconv.ParseFloat(accuracy, 64)
+
+					err := CreateCms(key, bytesArray, prs, acc)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+				} else if secondOption == "2" {
+					fmt.Print("Enter key: ")
+					var key string
+					scanner.Scan()
+					key = scanner.Text()
+					fmt.Print("Enter value: ")
+					var valuesString string
+					scanner.Scan()
+					valuesString = scanner.Text()
+					values := strings.Split(valuesString, ",")
+
+					var bytesArray [][]byte
+					for _, value := range values {
+						bytesArray = append(bytesArray, []byte(value))
+					}
+
+					err := InsertIntoCms(key, bytesArray)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+				} else if secondOption == "3" {
+					fmt.Print("Enter key: ")
+					var key string
+					scanner.Scan()
+					key = scanner.Text()
+					fmt.Print("Enter Value: ")
+					var value string
+					scanner.Scan()
+					value = scanner.Text()
+					num, err := CmsNumOfAppearances(key, []byte(value))
+					if err != nil {
+						fmt.Println("\nCMS not found!")
+					} else {
+						fmt.Println("\nNum of appearances: ", num)
+					}
+
+				} else if secondOption == "4" {
+					break
+				} else {
+					fmt.Println("\nInvalid input!")
+				}
+			}
+		} else if option == "8" {
+			for {
+				fmt.Println("\nBF menu")
+				fmt.Println("------------------------------")
+				fmt.Println("1. Create new BF")
+				fmt.Println("2. Insert data in existing BF")
+				fmt.Println("3. Contains")
+				fmt.Println("4. Return to main menu")
+				fmt.Println("------------------------------")
+				fmt.Print("Enter option: ")
+				var secondOption string
+				scanner.Scan()
+				secondOption = scanner.Text()
+				if secondOption == "1" {
+					fmt.Print("Enter key: ")
+					var key string
+					scanner.Scan()
+					key = scanner.Text()
+					fmt.Print("Enter values: ")
+					var valuesString string
+					scanner.Scan()
+					valuesString = scanner.Text()
+					fmt.Print("Enter p: ")
+					var pString string
+					scanner.Scan()
+					pString = scanner.Text()
+					fmt.Print("Enter n: ")
+					var nString string
+					scanner.Scan()
+					nString = scanner.Text()
+					values := strings.Split(valuesString, ",")
+					p, _ := strconv.ParseFloat(pString, 64)
+					n, _ := strconv.Atoi(nString)
+
+					var bytesArray [][]byte
+					for _, value := range values {
+						bytesArray = append(bytesArray, []byte(value))
+					}
+
+					err := CreateBloomFilter(key, bytesArray, p, n)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+				} else if secondOption == "2" {
+					fmt.Print("Enter key: ")
+					var key string
+					scanner.Scan()
+					key = scanner.Text()
+					fmt.Print("Enter values: ")
+					var valuesString string
+					scanner.Scan()
+					valuesString = scanner.Text()
+					values := strings.Split(valuesString, ",")
+
+					var bytesArray [][]byte
+					for _, value := range values {
+						bytesArray = append(bytesArray, []byte(value))
+					}
+
+					err := InsertIntoBloomFilter(key, bytesArray)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+				} else if secondOption == "3" {
+					fmt.Print("Enter key: ")
+					var key string
+					scanner.Scan()
+					key = scanner.Text()
+					fmt.Print("Enter value: ")
+					var value string
+					scanner.Scan()
+					value = scanner.Text()
+					contains, err := BloomFilterContains(key, []byte(value))
+					if err != nil {
+						fmt.Println("\nBF not found!")
+					} else {
+						fmt.Println("\nContains: ", contains)
+					}
+				} else if secondOption == "4" {
+					break
+				} else {
+					fmt.Println("\nInvalid input!")
+				}
+			}
+
+		} else if option == "9" {
 			records := memtable.Flush()
 			if len(records) > 0 {
 				lsm.CreateLevelTables(records)
@@ -124,7 +380,7 @@ func main() {
 	}
 }
 
-func CreateHll(key string, values [][]byte, p uint) error{
+func CreateHll(key string, values [][]byte, p uint) error {
 	// ================
 	// Description:
 	// ================
@@ -132,70 +388,121 @@ func CreateHll(key string, values [][]byte, p uint) error{
 	//		Stores the structure in database with the given key
 	//		Returns error if the key already exists
 	check := Get(key)
-	if check != nil{
+	if check != nil {
 		return errors.New("key already in database")
-	} else{
+	} else {
 		hll := hyperLogLog.NewHyperLogLog(p)
-		for _, val := range values{
+		for _, val := range values {
 			hll.Insert(val)
 		}
 		Put(key, hll.Encode())
 	}
 	return nil
 }
-func InsertIntoHll(key string, values [][]byte) error{
+
+func CreateCms(key string, values [][]byte, prs, acc float64) error {
+	check := Get(key)
+	if check != nil {
+		return errors.New("key already in database")
+	} else {
+		cms := countMinSketch.NewCountMinSketch(prs, acc)
+		for _, val := range values {
+			cms.Insert(val)
+		}
+		Put(key, cms.Encode())
+	}
+	return nil
+}
+
+func InsertIntoCms(key string, values [][]byte) error {
+	bytes := Get(key)
+	if bytes == nil {
+		return errors.New("key not found")
+	}
+	cms := countMinSketch.Decode(bytes)
+	for _, val := range values {
+		cms.Insert(val)
+	}
+	Put(key, cms.Encode())
+	return nil
+}
+
+func CmsNumOfAppearances(key string, value []byte) (uint, error) {
+	bytes := Get(key)
+	if bytes == nil {
+		return 0, errors.New("key not found")
+	}
+	cms := countMinSketch.Decode(bytes)
+	return cms.Count(value), nil
+}
+
+func InsertIntoHll(key string, values [][]byte) error {
 	// ================
 	// Description:
 	// ================
 	// 		Inserts values into the HyperLogLog with the given key
 	//		Returns error if the key is not corresponding to a HyperLogLog structure
 	bytes := Get(key)
+	if bytes == nil {
+		return errors.New("key not found")
+	}
 	hll := hyperLogLog.Decode(bytes)
-	for _, val := range values{
+	for _, val := range values {
 		hll.Insert(val)
 	}
 	Put(key, hll.Encode())
 	return nil
 }
-func GetCardinality(key string) (float64, error){
+
+func GetCardinality(key string) (float64, error) {
 	// ================
 	// Description:
 	// ================
 	// 		Returns cardinality of HyperLogLog with given key
 	//		Returns error if the key is not corresponding to a HyperLogLog structure
 	bytes := Get(key)
+	if bytes == nil {
+		return -1, errors.New("key not found")
+	}
 	hll := hyperLogLog.Decode(bytes)
 	return hll.Cardinality(), nil
 }
 
-func CreateBloomFilter(key string, values [][]byte, p float64, n int) error{
+func CreateBloomFilter(key string, values [][]byte, p float64, n int) error {
 	check := Get(key)
-	if check != nil{
+	if check != nil {
 		return errors.New("key already in database")
-	} else{
+	} else {
 		bFilter := bloomFilter.NewBloomFilter(p, n)
-		for _, val := range values{
+		for _, val := range values {
 			bFilter.Insert(val)
 		}
 		Put(key, bFilter.Encode())
 	}
 	return nil
 }
-func InsertIntoBloomFilter(key string, values [][]byte) error{
+
+func InsertIntoBloomFilter(key string, values [][]byte) error {
 	bytes := Get(key)
+	if bytes == nil {
+		return errors.New("key not found")
+	}
 	bFilter := bloomFilter.Decode(bytes)
-	for _, val := range values{
+	for _, val := range values {
 		bFilter.Insert(val)
 	}
 	Put(key, bFilter.Encode())
 	return nil
 }
-func BloomFilterContains(key string, value []byte) (bool, error){
+
+func BloomFilterContains(key string, value []byte) (bool, error) {
 	bytes := Get(key)
+	if bytes == nil {
+		return false, errors.New("key not found")
+	}
 	bFilter := bloomFilter.Decode(bytes)
 	return bFilter.Contains(value), nil
 }
-
 
 func Delete(key string) bool {
 	if tb.CheckInputTimer() {
