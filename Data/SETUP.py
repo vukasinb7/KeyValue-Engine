@@ -118,7 +118,7 @@ def main():
               'suzajov', 'jovadal', 'suzajov', 'jovadal', 'jovadal', 'suzajov', 'online', 'online', 'online', 'online',
               'online', 'online', 'online', 'online', 'suzajov', 'online', 'jovadal', 'jovadal', 'jovadal', 'online',
               'online', 'online']
-    file = open('testData.txt', 'w')
+    file = open('testData.txt', 'DefWal')
     for i in range(70):
         file.write(lista1[i]+"|"+lista8[i][0]+" "+
                              lista8[i][1]+ "\n")
