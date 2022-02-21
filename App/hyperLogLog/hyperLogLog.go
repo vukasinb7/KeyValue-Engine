@@ -75,7 +75,7 @@ func (hll *HyperLogLog) Encode() []byte {
 	binary.LittleEndian.PutUint32(output[16:], hll.seed)
 	binary.LittleEndian.PutUint32(output[20:], bucketsLen)
 	for i := 0; i < int(bucketsLen); i++ {
-		output[24+i] = hll.buckets[i] // ?????? devara koji
+		output[20+i] = hll.buckets[i] // ?????? devara radi li ovo
 	}
 
 	return output
