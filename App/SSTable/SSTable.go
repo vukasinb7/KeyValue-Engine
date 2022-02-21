@@ -4,7 +4,6 @@ import (
 	"bloomFilter"
 	"countMinSketch"
 	"encoding/binary"
-	"hash/crc32"
 	"hyperLogLog"
 	"io/ioutil"
 	"log"
@@ -23,10 +22,6 @@ type SSTableManager struct {
 
 func (ss *SSTableManager) DirPath() string {
 	return ss.dirPath
-}
-
-func CRC32(data []byte) uint32 {
-	return crc32.ChecksumIEEE(data)
 }
 
 func CreateSSTableMng(DirPath string) *SSTableManager {
