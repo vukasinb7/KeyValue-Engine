@@ -20,6 +20,10 @@ type LSM struct {
 	dirPath   string
 }
 
+func (lsm *LSM) LsmLevels() *LSMlevel {
+	return &lsm.lsmLevels
+}
+
 func (lsm *LSM) DirPath() string {
 	return lsm.dirPath
 }
@@ -31,7 +35,19 @@ type LSMlevel struct {
 	threshold uint64
 }
 
-func (lsmLvl *LSMlevel) compaction() {
+func (lsmLvl *LSMlevel) NextLevel() *LSMlevel {
+	return lsmLvl.nextLevel
+}
+
+func (lsmLvl *LSMlevel) Size() uint64 {
+	return lsmLvl.size
+}
+
+func (lsmLvl *LSMlevel) Threshold() uint64 {
+	return lsmLvl.threshold
+}
+
+func (lsmLvl *LSMlevel) Compaction() {
 	levelFolders, err := ioutil.ReadDir(lsmLvl.manager.DirPath())
 	if err != nil {
 		log.Fatal(err)
@@ -113,7 +129,7 @@ func (lsmLvl *LSMlevel) compaction() {
 			lsmLvl.size -= uint64(data1_stat.Size())
 			lsmLvl.size -= uint64(data2_stat.Size())
 
-			lsmLvl.nextLevel.createSSTable(pairs)
+			lsmLvl.nextLevel.createSSTableWithAutomation(pairs)
 			err = data1.Close()
 			if err != nil {
 				log.Fatal(err)
@@ -190,9 +206,17 @@ func (lsmLvl *LSMlevel) createSSTable(pairs []pair.KVPair) {
 		return
 	}
 	lsmLvl.size += size
+}
+
+func (lsmLvl *LSMlevel) createSSTableWithAutomation(pairs []pair.KVPair) {
+	size, err := lsmLvl.manager.CreateSSTable(pairs)
+	if err != nil {
+		return
+	}
+	lsmLvl.size += size
 	if lsmLvl.size > lsmLvl.threshold {
 		if lsmLvl.nextLevel != nil {
-			lsmLvl.compaction()
+			lsmLvl.Compaction()
 		}
 	}
 }

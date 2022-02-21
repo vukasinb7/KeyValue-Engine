@@ -1,0 +1,7 @@
+Data/LSM/C2/SSTable_20/Usertable-20-Data.bin
+Data/LSM/C2/SSTable_20/Usertable-20-Index.bin
+Data/LSM/C2/SSTable_20/Usertable-20-Summary.bin
+Data/LSM/C2/SSTable_20/Usertable-20-Filter.bin
+Data/LSM/C2/SSTable_20/Usertable-20-Metadata.txt
+Data/LSM/C2/SSTable_20/Usertable-20-HLL.bin
+Data/LSM/C2/SSTable_20/Usertable-20-CMS.bin

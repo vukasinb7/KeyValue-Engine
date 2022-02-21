@@ -1,0 +1,7 @@
+Data/LSM/C2/SSTable_19/Usertable-19-Data.bin
+Data/LSM/C2/SSTable_19/Usertable-19-Index.bin
+Data/LSM/C2/SSTable_19/Usertable-19-Summary.bin
+Data/LSM/C2/SSTable_19/Usertable-19-Filter.bin
+Data/LSM/C2/SSTable_19/Usertable-19-Metadata.txt
+Data/LSM/C2/SSTable_19/Usertable-19-HLL.bin
+Data/LSM/C2/SSTable_19/Usertable-19-CMS.bin

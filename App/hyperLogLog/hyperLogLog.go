@@ -75,8 +75,31 @@ func (hll *HyperLogLog) Encode() []byte {
 	binary.LittleEndian.PutUint32(output[16:], hll.seed)
 	binary.LittleEndian.PutUint32(output[20:], bucketsLen)
 	for i := 0; i < int(bucketsLen); i++ {
-		output[20+i] = hll.buckets[i]
+		output[24+i] = hll.buckets[i] // ?????? devara koji
 	}
 
 	return output
+}
+
+func Decode(bytes []byte) HyperLogLog {
+	p := uint(binary.LittleEndian.Uint32(bytes[:]))
+	m := uint(binary.LittleEndian.Uint32(bytes[4:]))
+	rc := math.Float64frombits(binary.LittleEndian.Uint64(bytes[8:]))
+	seed := binary.LittleEndian.Uint32(bytes[16:])
+	bucketsLen := int(binary.LittleEndian.Uint32(bytes[20:]))
+
+	buckets := make([]uint8, bucketsLen, bucketsLen)
+	for i := 0; i < bucketsLen; i++ {
+		buckets[i] = bytes[24+i]
+	}
+
+	hll := HyperLogLog{
+		p:            p,
+		m:            m,
+		rc:           rc,
+		buckets:      buckets,
+		seed:         seed,
+		hashFunction: murmur3.New32WithSeed(seed),
+	}
+	return hll
 }

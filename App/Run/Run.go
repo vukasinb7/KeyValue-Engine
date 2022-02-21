@@ -59,7 +59,8 @@ func main() {
 		fmt.Println("2. Put")
 		fmt.Println("3. Get")
 		fmt.Println("4. Delete")
-		fmt.Println("5. Exit")
+		fmt.Println("5. Compactions")
+		fmt.Println("6. Exit")
 		fmt.Println("------------------------------")
 		fmt.Print("Enter option: ")
 		var option string
@@ -99,6 +100,17 @@ func main() {
 			Delete(key)
 
 		} else if option == "5" {
+			head := lsm.LsmLevels()
+			if head.Size() > head.Threshold() {
+				if head.NextLevel() != nil {
+					head.Compaction()
+					fmt.Println("\nCompactions done successfully!")
+				}
+			} else {
+				fmt.Println("\nCompactions unsuccessful!")
+			}
+
+		} else if option == "6" {
 			records := memtable.Flush()
 			if len(records) > 0 {
 				lsm.CreateLevelTables(records)
@@ -111,30 +123,24 @@ func main() {
 }
 
 func Delete(key string) bool {
-	value := Get(key)
 	if tb.CheckInputTimer() {
-		if value != nil {
-			tombstone := byte(1)
-			currentTime := time.Now()
-			timestamp := currentTime.UnixNano()
-			newPair := pair.KVPair{Key: key, Value: value, Tombstone: tombstone, Timestamp: uint64(timestamp)}
+		tombstone := byte(1)
+		currentTime := time.Now()
+		timestamp := currentTime.UnixNano()
+		newPair := pair.KVPair{Key: key, Value: []byte{}, Tombstone: tombstone, Timestamp: uint64(timestamp)}
 
-			err := w.PushRecord(newPair)
-			if err != nil {
-				log.Fatal(err)
-			}
-			memtable.Delete(newPair.Key)
-			lruCache.Set(key, value, tombstone)
-			if memtable.Size() > memtable.Threshold() {
-				lsm.CreateLevelTables(memtable.Flush())
-				w.ResetWAL()
-			}
-			fmt.Println("\nRecord deleted successfully!")
-			return true
-		} else {
-			fmt.Println("\nRecord not found!")
-			return false
+		err := w.PushRecord(newPair)
+		if err != nil {
+			log.Fatal(err)
 		}
+		memtable.Delete(newPair.Key)
+		lruCache.Set(key, []byte{}, tombstone)
+		if memtable.Size() > memtable.Threshold() {
+			lsm.CreateLevelTables(memtable.Flush())
+			w.ResetWAL()
+		}
+		fmt.Println("\nRecord deleted successfully!")
+		return true
 	} else {
 		fmt.Println("\nToo many inputs!")
 		return false

@@ -26,6 +26,14 @@ func createHashFunctions(k uint) ([]hash.Hash32, []uint32) {
 	return h, seeds
 }
 
+func hashFunctionsFromSeeds(seeds []uint32) []hash.Hash32 {
+	var h []hash.Hash32
+	for i := 0; i < len(seeds); i++ {
+		h = append(h, murmur3.New32WithSeed(seeds[i]))
+	}
+	return h
+}
+
 func (cms *CountMinSketch) getIndex(byteArray []byte, hfunc hash.Hash32) uint {
 	_, err := hfunc.Write(byteArray)
 	if err != nil {

@@ -1,0 +1,7 @@
+Data/LSM/C2/SSTable_15/Usertable-15-Data.bin
+Data/LSM/C2/SSTable_15/Usertable-15-Index.bin
+Data/LSM/C2/SSTable_15/Usertable-15-Summary.bin
+Data/LSM/C2/SSTable_15/Usertable-15-Filter.bin
+Data/LSM/C2/SSTable_15/Usertable-15-Metadata.txt
+Data/LSM/C2/SSTable_15/Usertable-15-HLL.bin
+Data/LSM/C2/SSTable_15/Usertable-15-CMS.bin

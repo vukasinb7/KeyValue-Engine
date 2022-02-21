@@ -50,3 +50,31 @@ func (cms *CountMinSketch) Encode() []byte {
 	}
 	return output
 }
+
+func Decode(bytes []byte) CountMinSketch {
+	k := uint(binary.LittleEndian.Uint32(bytes[:]))
+	m := uint(binary.LittleEndian.Uint32(bytes[4:]))
+	prs := math.Float64frombits(binary.LittleEndian.Uint64(bytes[8:]))
+	acc := math.Float64frombits(binary.LittleEndian.Uint64(bytes[16:]))
+	arrLen := int(binary.LittleEndian.Uint32(bytes[24:]))
+	arr := make([]uint, arrLen, arrLen)
+	for i := 0; i < arrLen; i++ {
+		arr[i] = uint(binary.LittleEndian.Uint32(bytes[28+i*4:]))
+	}
+	hLen := int(binary.LittleEndian.Uint32(bytes[28+arrLen*4:]))
+	seeds := make([]uint32, hLen, hLen)
+	for i := 0; i < hLen; i++ {
+		index := 32 + arrLen*4 + i*4
+		seeds[i] = binary.LittleEndian.Uint32(bytes[index:])
+	}
+	cms := CountMinSketch{
+		k:             k,
+		m:             m,
+		prs:           prs,
+		acc:           acc,
+		arr:           arr,
+		seeds:         seeds,
+		hashFunctions: hashFunctionsFromSeeds(seeds),
+	}
+	return cms
+}
