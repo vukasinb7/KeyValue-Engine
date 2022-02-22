@@ -135,25 +135,25 @@ func Get(key string) []byte {
 				firstKeySize := make([]byte, recordUtil.KEY_SIZE, recordUtil.KEY_SIZE)
 				err := binary.Read(summaryFile, binary.LittleEndian, &firstKeySize)
 				if err != nil {
-					log.Fatal()
+					log.Fatal(err)
 				}
 
 				firstKey := make([]byte, binary.LittleEndian.Uint64(firstKeySize), binary.LittleEndian.Uint64(firstKeySize))
 				err = binary.Read(summaryFile, binary.LittleEndian, &firstKey)
 				if err != nil {
-					log.Fatal()
+					log.Fatal(err)
 				}
 
 				lastKeySize := make([]byte, recordUtil.KEY_SIZE, recordUtil.KEY_SIZE)
 				err = binary.Read(summaryFile, binary.LittleEndian, &lastKeySize)
 				if err != nil {
-					log.Fatal()
+					log.Fatal(err)
 				}
 
 				lastKey := make([]byte, binary.LittleEndian.Uint64(lastKeySize), binary.LittleEndian.Uint64(lastKeySize))
 				err = binary.Read(summaryFile, binary.LittleEndian, &lastKey)
 				if err != nil {
-					log.Fatal()
+					log.Fatal(err)
 				}
 
 				if string(firstKey) <= key && key <= string(lastKey) {
@@ -161,13 +161,13 @@ func Get(key string) []byte {
 						currentKeySize := make([]byte, recordUtil.KEY_SIZE, recordUtil.KEY_SIZE)
 						err := binary.Read(summaryFile, binary.LittleEndian, &currentKeySize)
 						if err != nil {
-							log.Fatal()
+							log.Fatal(err)
 						}
 
 						currentKey := make([]byte, binary.LittleEndian.Uint64(currentKeySize), binary.LittleEndian.Uint64(currentKeySize))
 						err = binary.Read(summaryFile, binary.LittleEndian, &currentKey)
 						if err != nil {
-							log.Fatal()
+							log.Fatal(err)
 						}
 
 						if string(currentKey) > key {
@@ -177,7 +177,7 @@ func Get(key string) []byte {
 						var currentIndexAddress uint64
 						err = binary.Read(summaryFile, binary.LittleEndian, &currentIndexAddress)
 						if err != nil {
-							log.Fatal()
+							log.Fatal(err)
 						}
 
 						if key == string(currentKey) {
@@ -186,22 +186,22 @@ func Get(key string) []byte {
 
 							_, err = indexFile.Seek(int64(currentIndexAddress), 0)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							_, err = indexFile.Seek(recordUtil.KEY_SIZE, 1)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 							_, err = indexFile.Seek(int64(binary.LittleEndian.Uint64(currentKeySize)), 1)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							var dataAddress uint64
 							err = binary.Read(indexFile, binary.LittleEndian, &dataAddress)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							err := indexFile.Close()
@@ -213,51 +213,51 @@ func Get(key string) []byte {
 
 							_, err = dataFile.Seek(int64(dataAddress), 0)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							crc := make([]byte, recordUtil.CRC_SIZE, recordUtil.CRC_SIZE)
 							err = binary.Read(dataFile, binary.LittleEndian, &crc)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							tst := make([]byte, recordUtil.TIMESTAMP_SIZE, recordUtil.TIMESTAMP_SIZE)
 							err = binary.Read(dataFile, binary.LittleEndian, &tst)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							tStone := make([]byte, recordUtil.TOMBSTONE_SIZE, recordUtil.TOMBSTONE_SIZE)
 							err = binary.Read(dataFile, binary.LittleEndian, &tStone)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							_, err = dataFile.Seek(recordUtil.KEY_SIZE, 1)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							valSize := make([]byte, recordUtil.VALUE_SIZE, recordUtil.VALUE_SIZE)
 							err = binary.Read(dataFile, binary.LittleEndian, &valSize)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							_, err = dataFile.Seek(int64(binary.LittleEndian.Uint64(currentKeySize)), 1)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							value := make([]byte, binary.LittleEndian.Uint64(valSize), binary.LittleEndian.Uint64(valSize))
 							err = binary.Read(dataFile, binary.LittleEndian, &value)
 							if err != nil {
-								log.Fatal()
+								log.Fatal(err)
 							}
 
 							if binary.LittleEndian.Uint32(crc) != recordUtil.CRC32(value) {
-								log.Fatal()
+								log.Fatal(err)
 							}
 							err = dataFile.Close()
 							if err != nil {

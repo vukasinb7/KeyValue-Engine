@@ -144,7 +144,7 @@ func mainMenu() {
 
 					err := Engine.CreateHll(key, bytesArray, uint(p))
 					if err != nil {
-						log.Fatal(err)
+						fmt.Println("\nError:", err)
 					}
 
 				} else if secondOption == "2" {
@@ -165,7 +165,7 @@ func mainMenu() {
 
 					err := Engine.InsertIntoHll(key, bytesArray)
 					if err != nil {
-						log.Fatal(err)
+						fmt.Println("\nError:", err)
 					}
 
 				} else if secondOption == "3" {
@@ -175,7 +175,7 @@ func mainMenu() {
 					key = scanner.Text()
 					value, err := Engine.GetCardinality(key)
 					if err != nil {
-						fmt.Println("\nHLL not found!")
+						fmt.Println("\nError:", err)
 					} else {
 						fmt.Println("\nCardinality: ", value)
 					}
@@ -227,7 +227,7 @@ func mainMenu() {
 
 					err := Engine.CreateCms(key, bytesArray, prs, acc)
 					if err != nil {
-						log.Fatal(err)
+						fmt.Println("\nError:", err)
 					}
 
 				} else if secondOption == "2" {
@@ -248,7 +248,7 @@ func mainMenu() {
 
 					err := Engine.InsertIntoCms(key, bytesArray)
 					if err != nil {
-						log.Fatal(err)
+						fmt.Println("\nError:", err)
 					}
 
 				} else if secondOption == "3" {
@@ -262,7 +262,7 @@ func mainMenu() {
 					value = scanner.Text()
 					num, err := Engine.CmsNumOfAppearances(key, []byte(value))
 					if err != nil {
-						fmt.Println("\nCMS not found!")
+						fmt.Println("\nError:", err)
 					} else {
 						fmt.Println("\nNum of appearances: ", num)
 					}
@@ -314,7 +314,7 @@ func mainMenu() {
 
 					err := Engine.CreateBloomFilter(key, bytesArray, p, n)
 					if err != nil {
-						log.Fatal(err)
+						fmt.Println("\nError:", err)
 					}
 
 				} else if secondOption == "2" {
@@ -335,7 +335,7 @@ func mainMenu() {
 
 					err := Engine.InsertIntoBloomFilter(key, bytesArray)
 					if err != nil {
-						log.Fatal(err)
+						fmt.Println("\nError:", err)
 					}
 
 				} else if secondOption == "3" {
@@ -349,7 +349,7 @@ func mainMenu() {
 					value = scanner.Text()
 					contains, err := Engine.BloomFilterContains(key, []byte(value))
 					if err != nil {
-						fmt.Println("\nBF not found!")
+						fmt.Println("\nError:", err)
 					} else {
 						fmt.Println("\nContains: ", contains)
 					}
