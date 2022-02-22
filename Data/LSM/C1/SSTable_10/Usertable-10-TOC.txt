@@ -3,5 +3,3 @@ Data/LSM/C1/SSTable_10/Usertable-10-Index.bin
 Data/LSM/C1/SSTable_10/Usertable-10-Summary.bin
 Data/LSM/C1/SSTable_10/Usertable-10-Filter.bin
 Data/LSM/C1/SSTable_10/Usertable-10-Metadata.txt
-Data/LSM/C1/SSTable_10/Usertable-10-HLL.bin
-Data/LSM/C1/SSTable_10/Usertable-10-CMS.bin

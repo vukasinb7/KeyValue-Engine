@@ -3,5 +3,3 @@ Data/LSM/C1/SSTable_8/Usertable-8-Index.bin
 Data/LSM/C1/SSTable_8/Usertable-8-Summary.bin
 Data/LSM/C1/SSTable_8/Usertable-8-Filter.bin
 Data/LSM/C1/SSTable_8/Usertable-8-Metadata.txt
-Data/LSM/C1/SSTable_8/Usertable-8-HLL.bin
-Data/LSM/C1/SSTable_8/Usertable-8-CMS.bin

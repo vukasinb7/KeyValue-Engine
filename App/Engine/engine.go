@@ -340,7 +340,11 @@ func CmsNumOfAppearances(key string, value []byte) (uint, error) {
 	if bytes == nil {
 		return 0, errors.New("key not found")
 	}
-	cms := countMinSketch.Decode(bytes)
+	var cms countMinSketch.CountMinSketch
+	if err := recordUtil.TryCatch(func() { cms = countMinSketch.Decode(bytes) })(); err != nil {
+		return 0, errors.New("CMS not found")
+	}
+
 	return cms.Count(value), nil
 }
 
@@ -372,7 +376,11 @@ func GetCardinality(key string) (float64, error) {
 	if bytes == nil {
 		return -1, errors.New("key not found")
 	}
-	hll := hyperLogLog.Decode(bytes)
+	var hll hyperLogLog.HyperLogLog
+	if err := recordUtil.TryCatch(func() { hll = hyperLogLog.Decode(bytes) })(); err != nil {
+		return -1, errors.New("HLL not found")
+	}
+
 	return hll.Cardinality(), nil
 }
 
@@ -408,6 +416,10 @@ func BloomFilterContains(key string, value []byte) (bool, error) {
 	if bytes == nil {
 		return false, errors.New("key not found")
 	}
-	bFilter := bloomFilter.Decode(bytes)
-	return bFilter.Contains(value), nil
+	var bf bloomFilter.BloomFilter
+	if err := recordUtil.TryCatch(func() { bf = bloomFilter.Decode(bytes) })(); err != nil {
+		return false, errors.New("BF not found")
+	}
+
+	return bf.Contains(value), nil
 }

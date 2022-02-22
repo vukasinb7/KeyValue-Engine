@@ -1,7 +1,0 @@
-Data/LSM/C3/SSTable_1/Usertable-1-Data.bin
-Data/LSM/C3/SSTable_1/Usertable-1-Index.bin
-Data/LSM/C3/SSTable_1/Usertable-1-Summary.bin
-Data/LSM/C3/SSTable_1/Usertable-1-Filter.bin
-Data/LSM/C3/SSTable_1/Usertable-1-Metadata.txt
-Data/LSM/C3/SSTable_1/Usertable-1-HLL.bin
-Data/LSM/C3/SSTable_1/Usertable-1-CMS.bin

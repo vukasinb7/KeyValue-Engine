@@ -1,7 +1,0 @@
-Data/LSM/C2/SSTable_17/Usertable-17-Data.bin
-Data/LSM/C2/SSTable_17/Usertable-17-Index.bin
-Data/LSM/C2/SSTable_17/Usertable-17-Summary.bin
-Data/LSM/C2/SSTable_17/Usertable-17-Filter.bin
-Data/LSM/C2/SSTable_17/Usertable-17-Metadata.txt
-Data/LSM/C2/SSTable_17/Usertable-17-HLL.bin
-Data/LSM/C2/SSTable_17/Usertable-17-CMS.bin

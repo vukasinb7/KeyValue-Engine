@@ -10,6 +10,7 @@ import (
 	"lru"
 	"memTable"
 	"os"
+	"pair"
 	"strconv"
 	"strings"
 	"tokenBucket"
@@ -19,7 +20,18 @@ import (
 func insertTestData() {
 	data := configurationManager.ParseTxtData(configurationManager.Configuration.DataFile)
 	for _, val := range data {
-		Engine.Put(val.Key, val.Value)
+		newPair := pair.KVPair{val.Key, val.Value, val.Tombstone, val.Timestamp}
+
+		err := Engine.DefWal.PushRecord(newPair)
+		if err != nil {
+			log.Fatal(err)
+		}
+		Engine.DefMemtable.Insert(newPair)
+		Engine.DefLRUCache.Set(val.Key, val.Value, val.Tombstone)
+		if Engine.DefMemtable.Size() > Engine.DefMemtable.Threshold() {
+			Engine.DefLSM.CreateLevelTables(Engine.DefMemtable.Flush())
+			Engine.DefWal.ResetWAL()
+		}
 	}
 }
 
@@ -118,7 +130,7 @@ func mainMenu() {
 					var valuesString string
 					scanner.Scan()
 					valuesString = scanner.Text()
-					fmt.Print("Enter p: ")
+					fmt.Print("Enter precision: ")
 					var pString string
 					scanner.Scan()
 					pString = scanner.Text()
@@ -283,11 +295,11 @@ func mainMenu() {
 					var valuesString string
 					scanner.Scan()
 					valuesString = scanner.Text()
-					fmt.Print("Enter p: ")
+					fmt.Print("Enter precision: ")
 					var pString string
 					scanner.Scan()
 					pString = scanner.Text()
-					fmt.Print("Enter n: ")
+					fmt.Print("Enter size: ")
 					var nString string
 					scanner.Scan()
 					nString = scanner.Text()
